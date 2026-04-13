@@ -127,18 +127,20 @@ const effectiveSimulationHeight = (containerRect: DOMRect) => {
 };
 
 export const variantWander: VariantFn = (shapes, getCursor, container) => {
-  // Target drift is rotation-based, not additive, so shapes keep their
-  // speed while continuously changing heading. A mild speed floor makes
-  // sure nothing stalls in dead air and a light damping keeps cursor
-  // repulsion from blowing up over time.
-  const TARGET_SPEED = 22;
-  const SPEED_FLOOR = 16;
-  const MAX_SPEED = 36;
-  const TURN_RATE = 1.8;
-  const CURSOR_REPEL_REACH = 220;
-  const CURSOR_REPEL_FORCE = 60;
-  const ZONE_PUSH_FORCE = 200;
-  const DAMPING = 0.998;
+  // Heading is randomized continuously and each shape gets a periodic
+  // random "kick" that resets its direction outright. This kills the
+  // drift-in-one-direction bias the rotation-only model suffered from.
+  const TARGET_SPEED = 28;
+  const SPEED_FLOOR = 18;
+  const MAX_SPEED = 48;
+  const TURN_RATE = 4.2;
+  const CURSOR_REPEL_REACH = 320;
+  const CURSOR_REPEL_FORCE = 150;
+  const ZONE_PUSH_FORCE = 260;
+  const DAMPING = 0.994;
+  const SCROLL_BOOST = 2.2;
+  const KICK_MIN_INTERVAL = 1.4;
+  const KICK_MAX_INTERVAL = 3.2;
 
   const rect0 = container.getBoundingClientRect();
   const anchors = shapes.map((shape) => {
@@ -157,12 +159,16 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
     const angle = Math.random() * Math.PI * 2;
     return { x: Math.cos(angle) * TARGET_SPEED, y: Math.sin(angle) * TARGET_SPEED };
   });
+  const nextKick = shapes.map(
+    () => performance.now() / 1000 + KICK_MIN_INTERVAL + Math.random() * (KICK_MAX_INTERVAL - KICK_MIN_INTERVAL),
+  );
 
   const scrollRates = shapes.map(readScrollRate);
   let lastTime = performance.now();
 
   const tick = () => {
     const now = performance.now();
+    const nowSec = now / 1000;
     const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
     const cursor = getCursor();
@@ -178,9 +184,8 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
       const pos = positions[i];
       const vel = velocities[i];
 
-      // Rotate the velocity vector by a small random angle each frame —
-      // preserves speed, changes heading. The result is a smooth wander
-      // path rather than a jittery random walk.
+      // Continuous random rotation — more aggressive than before so
+      // shapes curve visibly rather than drifting in near-straight lines.
       const turn = (Math.random() - 0.5) * TURN_RATE * dt;
       const cosA = Math.cos(turn);
       const sinA = Math.sin(turn);
@@ -189,12 +194,23 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
       vel.x = rotatedX;
       vel.y = rotatedY;
 
+      // Periodic heading reset — every ~1.4–3.2s each shape picks a
+      // fresh random direction while preserving its speed. This kills any
+      // accidental drift bias from damping, cursor forces, or edge wraps.
+      if (nowSec >= nextKick[i]) {
+        const speed = Math.hypot(vel.x, vel.y) || TARGET_SPEED;
+        const kickAngle = Math.random() * Math.PI * 2;
+        vel.x = Math.cos(kickAngle) * speed;
+        vel.y = Math.sin(kickAngle) * speed;
+        nextKick[i] = nowSec + KICK_MIN_INTERVAL + Math.random() * (KICK_MAX_INTERVAL - KICK_MIN_INTERVAL);
+      }
+
       if (cursor.active) {
         const dx = pos.x - (cursor.x - rect.left);
         const dy = pos.y - (cursor.y - rect.top);
         const dist = Math.hypot(dx, dy);
         if (dist > 0 && dist < CURSOR_REPEL_REACH) {
-          const weight = 1 - dist / CURSOR_REPEL_REACH;
+          const weight = (1 - dist / CURSOR_REPEL_REACH) ** 1.4;
           vel.x += (dx / dist) * weight * CURSOR_REPEL_FORCE * dt;
           vel.y += (dy / dist) * weight * CURSOR_REPEL_FORCE * dt;
         }
@@ -219,17 +235,13 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
         vel.y = (vel.y / speed) * MAX_SPEED;
         speed = MAX_SPEED;
       }
-      // Keep each shape above a minimum speed so nothing drifts to a halt.
+      // Speed floor reassigns a fresh random heading rather than
+      // rescaling the current one — that would lock in whatever direction
+      // the shape was already drifting in.
       if (speed < SPEED_FLOOR) {
-        if (speed < 0.01) {
-          const fallbackAngle = Math.random() * Math.PI * 2;
-          vel.x = Math.cos(fallbackAngle) * SPEED_FLOOR;
-          vel.y = Math.sin(fallbackAngle) * SPEED_FLOOR;
-        } else {
-          const scale = SPEED_FLOOR / speed;
-          vel.x *= scale;
-          vel.y *= scale;
-        }
+        const freshAngle = Math.random() * Math.PI * 2;
+        vel.x = Math.cos(freshAngle) * SPEED_FLOOR;
+        vel.y = Math.sin(freshAngle) * SPEED_FLOOR;
       }
 
       pos.x += vel.x * dt * 60;
@@ -240,7 +252,7 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
       if (pos.y < -20) pos.y = height + 20;
       else if (pos.y > height + 20) pos.y = -20;
 
-      const scrollY = -cursor.scrollOffset * scrollRates[i];
+      const scrollY = -cursor.scrollOffset * scrollRates[i] * SCROLL_BOOST;
       gsap.set(shape, {
         x: pos.x - anchors[i].x,
         y: pos.y - anchors[i].y + scrollY,
