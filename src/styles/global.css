@@ -6,6 +6,8 @@
 @import '@fontsource/tajawal/500.css';
 @import '@fontsource/tajawal/700.css';
 
+@import 'lenis/dist/lenis.css';
+
 @theme {
   /* ─── Semantic surface tokens — flipped by [data-theme] ─── */
   /* Default page is DARK first: cream reads as background (near-black), */
