@@ -115,7 +115,16 @@ const year = new Date().getFullYear();
   }
 
   .footer-inner {
-    padding-block: clamp(3rem, 6vh, 5rem);
+    padding-top: clamp(3rem, 6vh, 5rem);
+    padding-bottom: max(clamp(3rem, 6vh, 5rem), env(safe-area-inset-bottom));
+    padding-inline-start: max(
+      clamp(1.25rem, 4vw, 3rem),
+      env(safe-area-inset-left)
+    );
+    padding-inline-end: max(
+      clamp(1.25rem, 4vw, 3rem),
+      env(safe-area-inset-right)
+    );
     display: grid;
     gap: clamp(2rem, 4vh, 3rem);
   }

@@ -92,7 +92,16 @@ import ThemeToggle from './ThemeToggle.astro';
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding-block: 1rem;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: 1rem;
+    padding-inline-start: max(
+      clamp(1.25rem, 4vw, 3rem),
+      env(safe-area-inset-left)
+    );
+    padding-inline-end: max(
+      clamp(1.25rem, 4vw, 3rem),
+      env(safe-area-inset-right)
+    );
   }
 
   .nav-brand {
