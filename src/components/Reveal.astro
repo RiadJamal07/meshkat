@@ -1,0 +1,69 @@
+---
+interface Props {
+  as?: keyof HTMLElementTagNameMap;
+  delay?: number;
+  class?: string;
+}
+
+const { as: Tag = 'div', delay = 0, class: className = '' } = Astro.props as Props;
+---
+
+<Tag class:list={['reveal', className]} data-reveal data-reveal-delay={delay}>
+  <slot />
+</Tag>
+
+<style>
+  .reveal {
+    opacity: 0;
+    transform: translate3d(0, 1.25rem, 0);
+    will-change: transform, opacity;
+  }
+
+  .reveal[data-reveal-ready='true'] {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  const REVEAL_DURATION = 0.9;
+  const REVEAL_START = 'top 85%';
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const els = document.querySelectorAll<HTMLElement>('[data-reveal]');
+
+  if (els.length) {
+    if (reduce) {
+      els.forEach((el) => el.setAttribute('data-reveal-ready', 'true'));
+    } else {
+      gsap.registerPlugin(ScrollTrigger);
+
+      els.forEach((el) => {
+        const delay = Number(el.dataset.revealDelay ?? 0);
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: REVEAL_DURATION,
+          delay,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: el,
+            start: REVEAL_START,
+            once: true,
+          },
+          onStart: () => el.setAttribute('data-reveal-ready', 'true'),
+        });
+      });
+    }
+  }
+</script>
