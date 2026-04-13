@@ -127,20 +127,24 @@ const effectiveSimulationHeight = (containerRect: DOMRect) => {
 };
 
 export const variantWander: VariantFn = (shapes, getCursor, container) => {
-  // Heading is randomized continuously and each shape gets a periodic
-  // random "kick" that resets its direction outright. This kills the
-  // drift-in-one-direction bias the rotation-only model suffered from.
-  const TARGET_SPEED = 28;
+  // Each shape has a TARGET heading that drifts via slow random walk
+  // and gets occasional bigger shuffles. The actual velocity angle lerps
+  // toward the target every frame — so direction varies continuously
+  // but the path is always smooth, never jittery. Speed stays close to
+  // `TARGET_SPEED` except when cursor or zone forces push it.
+  const TARGET_SPEED = 26;
   const SPEED_FLOOR = 18;
-  const MAX_SPEED = 48;
-  const TURN_RATE = 4.2;
-  const CURSOR_REPEL_REACH = 320;
-  const CURSOR_REPEL_FORCE = 150;
-  const ZONE_PUSH_FORCE = 260;
-  const DAMPING = 0.994;
+  const MAX_SPEED = 42;
+  const HEADING_LERP = 0.045;
+  const TARGET_DRIFT_RATE = 0.9;
+  const SHUFFLE_MIN_INTERVAL = 3.5;
+  const SHUFFLE_MAX_INTERVAL = 6.5;
+  const SHUFFLE_RANGE = Math.PI * 0.75;
+  const CURSOR_REPEL_REACH = 300;
+  const CURSOR_REPEL_FORCE = 110;
+  const ZONE_PUSH_FORCE = 240;
+  const DAMPING = 0.992;
   const SCROLL_BOOST = 2.2;
-  const KICK_MIN_INTERVAL = 1.4;
-  const KICK_MAX_INTERVAL = 3.2;
 
   const rect0 = container.getBoundingClientRect();
   const anchors = shapes.map((shape) => {
@@ -155,12 +159,16 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
   const positions = shapes.map(() =>
     sampleRandomSafePosition(rect0.width, initialSimHeight),
   );
-  const velocities = shapes.map(() => {
-    const angle = Math.random() * Math.PI * 2;
-    return { x: Math.cos(angle) * TARGET_SPEED, y: Math.sin(angle) * TARGET_SPEED };
-  });
-  const nextKick = shapes.map(
-    () => performance.now() / 1000 + KICK_MIN_INTERVAL + Math.random() * (KICK_MAX_INTERVAL - KICK_MIN_INTERVAL),
+  const targetAngles = shapes.map(() => Math.random() * Math.PI * 2);
+  const velocities = targetAngles.map((angle) => ({
+    x: Math.cos(angle) * TARGET_SPEED,
+    y: Math.sin(angle) * TARGET_SPEED,
+  }));
+  const nextShuffle = shapes.map(
+    () =>
+      performance.now() / 1000 +
+      SHUFFLE_MIN_INTERVAL +
+      Math.random() * (SHUFFLE_MAX_INTERVAL - SHUFFLE_MIN_INTERVAL),
   );
 
   const scrollRates = shapes.map(readScrollRate);
@@ -184,33 +192,36 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
       const pos = positions[i];
       const vel = velocities[i];
 
-      // Continuous random rotation — more aggressive than before so
-      // shapes curve visibly rather than drifting in near-straight lines.
-      const turn = (Math.random() - 0.5) * TURN_RATE * dt;
-      const cosA = Math.cos(turn);
-      const sinA = Math.sin(turn);
-      const rotatedX = vel.x * cosA - vel.y * sinA;
-      const rotatedY = vel.x * sinA + vel.y * cosA;
-      vel.x = rotatedX;
-      vel.y = rotatedY;
+      // Slow random walk of the target heading.
+      targetAngles[i] += (Math.random() - 0.5) * TARGET_DRIFT_RATE * dt;
 
-      // Periodic heading reset — every ~1.4–3.2s each shape picks a
-      // fresh random direction while preserving its speed. This kills any
-      // accidental drift bias from damping, cursor forces, or edge wraps.
-      if (nowSec >= nextKick[i]) {
-        const speed = Math.hypot(vel.x, vel.y) || TARGET_SPEED;
-        const kickAngle = Math.random() * Math.PI * 2;
-        vel.x = Math.cos(kickAngle) * speed;
-        vel.y = Math.sin(kickAngle) * speed;
-        nextKick[i] = nowSec + KICK_MIN_INTERVAL + Math.random() * (KICK_MAX_INTERVAL - KICK_MIN_INTERVAL);
+      // Periodic bigger shuffle of the target (direction variety
+      // without teleporting the actual velocity).
+      if (nowSec >= nextShuffle[i]) {
+        targetAngles[i] += (Math.random() - 0.5) * SHUFFLE_RANGE;
+        nextShuffle[i] =
+          nowSec +
+          SHUFFLE_MIN_INTERVAL +
+          Math.random() * (SHUFFLE_MAX_INTERVAL - SHUFFLE_MIN_INTERVAL);
       }
+
+      // Lerp actual heading toward target, with proper angle
+      // wrap-around handling.
+      const speedNow = Math.hypot(vel.x, vel.y) || TARGET_SPEED;
+      const currentAngle = Math.atan2(vel.y, vel.x);
+      let diff = targetAngles[i] - currentAngle;
+      diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      const newAngle = currentAngle + diff * HEADING_LERP;
+      vel.x = Math.cos(newAngle) * speedNow;
+      vel.y = Math.sin(newAngle) * speedNow;
 
       if (cursor.active) {
         const dx = pos.x - (cursor.x - rect.left);
         const dy = pos.y - (cursor.y - rect.top);
         const dist = Math.hypot(dx, dy);
         if (dist > 0 && dist < CURSOR_REPEL_REACH) {
-          const weight = (1 - dist / CURSOR_REPEL_REACH) ** 1.4;
+          const weight = (1 - dist / CURSOR_REPEL_REACH) ** 1.6;
           vel.x += (dx / dist) * weight * CURSOR_REPEL_FORCE * dt;
           vel.y += (dy / dist) * weight * CURSOR_REPEL_FORCE * dt;
         }
@@ -235,13 +246,13 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
         vel.y = (vel.y / speed) * MAX_SPEED;
         speed = MAX_SPEED;
       }
-      // Speed floor reassigns a fresh random heading rather than
-      // rescaling the current one — that would lock in whatever direction
-      // the shape was already drifting in.
-      if (speed < SPEED_FLOOR) {
-        const freshAngle = Math.random() * Math.PI * 2;
-        vel.x = Math.cos(freshAngle) * SPEED_FLOOR;
-        vel.y = Math.sin(freshAngle) * SPEED_FLOOR;
+      // Floor preserves the current heading — the target+lerp system
+      // above already handles direction variety, so no need to also
+      // randomize on the floor (that would reintroduce jitter).
+      if (speed < SPEED_FLOOR && speed > 0.01) {
+        const scale = SPEED_FLOOR / speed;
+        vel.x *= scale;
+        vel.y *= scale;
       }
 
       pos.x += vel.x * dt * 60;
