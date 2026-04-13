@@ -35,10 +35,10 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
   const PARALLAX_REACH = 320;
   const PARALLAX_LERP = 0.18;
   const params = shapes.map((_, i) => ({
-    ampX: 14 + (i % 3) * 4,
-    ampY: 16 + ((i + 1) % 3) * 4,
-    freqX: (2 * Math.PI) / (10 + (i * 2.7) % 6),
-    freqY: (2 * Math.PI) / ((10 + (i * 2.7) % 6) * 0.83),
+    ampX: 22 + (i % 3) * 6,
+    ampY: 26 + ((i + 1) % 3) * 6,
+    freqX: (2 * Math.PI) / (7 + (i * 2.7) % 5),
+    freqY: (2 * Math.PI) / ((7 + (i * 2.7) % 5) * 0.83),
     phaseX: (i * 1.7) % (Math.PI * 2),
     phaseY: (i * 1.1) % (Math.PI * 2),
   }));
