@@ -1,0 +1,119 @@
+---
+const variants = [
+  { id: 'A', label: 'A', aria: 'Shape animation variant A — drift' },
+  { id: 'B', label: 'B', aria: 'Shape animation variant B — scatter' },
+  { id: 'C', label: 'C', aria: 'Shape animation variant C — constellation' },
+] as const;
+---
+
+<div class="hero-shapes-picker" data-hero-shapes-picker role="group" aria-label="Hero shape animation variant">
+  {variants.map((variant) => (
+    <button
+      type="button"
+      class="hero-shapes-pill"
+      data-variant={variant.id}
+      aria-label={variant.aria}
+      aria-pressed="false"
+    >
+      {variant.label}
+    </button>
+  ))}
+</div>
+
+<style>
+  .hero-shapes-picker {
+    display: inline-flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.3rem;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--color-cream) 40%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-ink) 10%, transparent);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .hero-shapes-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 22%, transparent);
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease;
+  }
+
+  .hero-shapes-pill:hover,
+  .hero-shapes-pill:focus-visible {
+    border-color: var(--color-brick);
+    color: var(--color-brick);
+  }
+
+  .hero-shapes-pill[aria-pressed='true'] {
+    background: var(--color-brick);
+    border-color: var(--color-brick);
+    color: var(--color-surface);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-shapes-pill {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  type VariantId = 'A' | 'B' | 'C';
+  const STORAGE_KEY = 'meshkat-shapes-variant';
+  const VALID: ReadonlyArray<VariantId> = ['A', 'B', 'C'];
+
+  const picker = document.querySelector<HTMLElement>('[data-hero-shapes-picker]');
+  if (picker) {
+    const pills = Array.from(
+      picker.querySelectorAll<HTMLButtonElement>('[data-variant]'),
+    );
+
+    const readInitial = (): VariantId => {
+      const url = new URL(window.location.href);
+      const param = url.searchParams.get('shapes');
+      if (param && VALID.includes(param as VariantId)) return param as VariantId;
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored && VALID.includes(stored as VariantId)) return stored as VariantId;
+      } catch (_) {}
+      return 'A';
+    };
+
+    const setActive = (id: VariantId) => {
+      pills.forEach((pill) => {
+        pill.setAttribute('aria-pressed', pill.dataset.variant === id ? 'true' : 'false');
+      });
+    };
+
+    setActive(readInitial());
+
+    pills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const id = pill.dataset.variant as VariantId | undefined;
+        if (!id || !VALID.includes(id)) return;
+        setActive(id);
+        try {
+          localStorage.setItem(STORAGE_KEY, id);
+        } catch (_) {}
+        window.dispatchEvent(new CustomEvent<VariantId>('shapes-variant-change', { detail: id }));
+      });
+    });
+  }
+</script>
