@@ -23,13 +23,14 @@ export type VariantFn = (
  * slow loop. Single writer per frame (gsap.set) so nothing fights over
  * the transform. */
 export const variantDrift: VariantFn = (shapes, getCursor) => {
-  const PARALLAX_MAX = 14;
-  const PARALLAX_REACH = 480;
+  const PARALLAX_MAX = 24;
+  const PARALLAX_REACH = 320;
+  const PARALLAX_LERP = 0.18;
   const params = shapes.map((_, i) => ({
-    ampX: 10 + (i % 3) * 3,
-    ampY: 12 + ((i + 1) % 3) * 3,
-    freqX: (2 * Math.PI) / (22 + (i * 2.7) % 8),
-    freqY: (2 * Math.PI) / ((22 + (i * 2.7) % 8) * 0.83),
+    ampX: 14 + (i % 3) * 4,
+    ampY: 16 + ((i + 1) % 3) * 4,
+    freqX: (2 * Math.PI) / (10 + (i * 2.7) % 6),
+    freqY: (2 * Math.PI) / ((10 + (i * 2.7) % 6) * 0.83),
     phaseX: (i * 1.7) % (Math.PI * 2),
     phaseY: (i * 1.1) % (Math.PI * 2),
   }));
@@ -46,8 +47,8 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
       const orbitY = Math.sin(t * p.freqY + p.phaseY) * p.ampY;
 
       if (!cursor.active) {
-        parallax[i].x += (0 - parallax[i].x) * 0.06;
-        parallax[i].y += (0 - parallax[i].y) * 0.06;
+        parallax[i].x += (0 - parallax[i].x) * PARALLAX_LERP;
+        parallax[i].y += (0 - parallax[i].y) * PARALLAX_LERP;
       } else {
         const rect = shape.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
@@ -56,14 +57,14 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
         const dy = cursor.y - cy;
         const dist = Math.hypot(dx, dy) || 1;
         if (dist > PARALLAX_REACH) {
-          parallax[i].x += (0 - parallax[i].x) * 0.08;
-          parallax[i].y += (0 - parallax[i].y) * 0.08;
+          parallax[i].x += (0 - parallax[i].x) * PARALLAX_LERP;
+          parallax[i].y += (0 - parallax[i].y) * PARALLAX_LERP;
         } else {
           const weight = 1 - dist / PARALLAX_REACH;
           const targetX = -(dx / dist) * weight * PARALLAX_MAX;
           const targetY = -(dy / dist) * weight * PARALLAX_MAX;
-          parallax[i].x += (targetX - parallax[i].x) * 0.08;
-          parallax[i].y += (targetY - parallax[i].y) * 0.08;
+          parallax[i].x += (targetX - parallax[i].x) * PARALLAX_LERP;
+          parallax[i].y += (targetY - parallax[i].y) * PARALLAX_LERP;
         }
       }
 
@@ -87,12 +88,12 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
  * glides AWAY on a quadratic falloff curve, max 36px displacement. Returns
  * to anchor with soft elastic ease on leave. */
 export const variantScatter: VariantFn = (shapes, getCursor) => {
-  const REACH = 220;
-  const MAX_DISP = 36;
+  const REACH = 260;
+  const MAX_DISP = 48;
 
   const quickTos = shapes.map((shape) => ({
-    x: gsap.quickTo(shape, 'x', { duration: 0.55, ease: 'power2.out' }),
-    y: gsap.quickTo(shape, 'y', { duration: 0.55, ease: 'power2.out' }),
+    x: gsap.quickTo(shape, 'x', { duration: 0.32, ease: 'power2.out' }),
+    y: gsap.quickTo(shape, 'y', { duration: 0.32, ease: 'power2.out' }),
   }));
 
   const tick = () => {
@@ -126,7 +127,7 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
   return () => {
     gsap.ticker.remove(tick);
     shapes.forEach((shape) => {
-      gsap.to(shape, { x: 0, y: 0, duration: 0.9, ease: 'elastic.out(1, 0.5)' });
+      gsap.to(shape, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)' });
     });
   };
 };
@@ -140,9 +141,9 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
 export const variantConstellation: VariantFn = (shapes, getCursor, container) => {
   const REACH = 280;
   const NEAREST_COUNT = 3;
-  const BREATH_AMP = 4;
-  const BREATH_FREQ = (2 * Math.PI) / 6;
-  const phases = shapes.map((_, i) => (i * 0.9) % 6);
+  const BREATH_AMP = 6;
+  const BREATH_FREQ = (2 * Math.PI) / 4;
+  const phases = shapes.map((_, i) => (i * 0.9) % 4);
   const start = performance.now();
 
   const svgNS = 'http://www.w3.org/2000/svg';
@@ -193,7 +194,7 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
         line.setAttribute('opacity', '0');
         return;
       }
-      const opacity = (1 - node.dist / REACH) * 0.6;
+      const opacity = (1 - node.dist / REACH) * 0.75;
       line.setAttribute('x1', `${cxLocal}`);
       line.setAttribute('y1', `${cyLocal}`);
       line.setAttribute('x2', `${node.sx}`);
