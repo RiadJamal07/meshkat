@@ -13,7 +13,8 @@ interface Props {
 
 const { title, description, lang = 'en' } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const ogImage = new URL('og.jpg', Astro.site).href;
+const ogImageLandscape = new URL('og.jpg', Astro.site).href;
+const ogImageSquare = new URL('og-square.jpg', Astro.site).href;
 ---
 
 <!doctype html>
@@ -34,17 +35,26 @@ const ogImage = new URL('og.jpg', Astro.site).href;
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={Astro.url.href} />
-    <meta property="og:image" content={ogImage} />
+    {/* Two OG images: square first so WhatsApp/iMessage pick it up,
+        landscape second for Facebook/LinkedIn/Slack. Twitter uses the
+        explicit twitter:image below, regardless of og:image order. */}
+    <meta property="og:image" content={ogImageSquare} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="1200" />
+    <meta property="og:image:alt" content={`${title} — square link preview`} />
+    <meta property="og:image" content={ogImageLandscape} />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={`${title} — link preview card`} />
+    <meta property="og:image:alt" content={`${title} — landscape link preview`} />
     <meta property="og:site_name" content="Meshkat Studio" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="ar_LB" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image" content={ogImageLandscape} />
 
     {/* Anti-FOUC: apply persisted theme before first paint. */}
     <script is:inline>
