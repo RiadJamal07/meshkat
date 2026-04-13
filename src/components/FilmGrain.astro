@@ -1,0 +1,46 @@
+---
+---
+
+<div class="film-grain" aria-hidden="true"></div>
+
+<style>
+  .film-grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.035;
+    /* Inline SVG turbulence — no external asset, no network round-trip. */
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size: 240px 240px;
+    background-repeat: repeat;
+    mix-blend-mode: overlay;
+    will-change: transform;
+    backface-visibility: hidden;
+    animation: grain 1.6s steps(4) infinite;
+  }
+
+  @keyframes grain {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    25% {
+      transform: translate3d(-8px, 8px, 0);
+    }
+    50% {
+      transform: translate3d(2px, -5px, 0);
+    }
+    75% {
+      transform: translate3d(5px, 3px, 0);
+    }
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .film-grain {
+      animation: none;
+    }
+  }
+</style>
