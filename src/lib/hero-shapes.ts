@@ -258,6 +258,7 @@ export const variantFollow: VariantFn = (shapes, getCursor, container) => {
   const ORBIT_FREQ = (2 * Math.PI) / ORBIT_PERIOD;
   const IDLE_TIMEOUT_MS = 500;
   const ZONE_PUSH = 0.35;
+  const FORMATION_RADIUS = 120;
 
   const rect0 = container.getBoundingClientRect();
   const anchors = shapes.map((shape) => {
@@ -270,6 +271,14 @@ export const variantFollow: VariantFn = (shapes, getCursor, container) => {
   const positions = anchors.map((a) => ({ x: a.x, y: a.y }));
   const followSpeeds = shapes.map((_, i) => 0.08 - (i / Math.max(shapes.length - 1, 1)) * 0.06);
   const scrollRates = shapes.map(readScrollRate);
+  // Each shape holds its own angular slot and radius around the shared
+  // target so they arrive at distinct points instead of piling up. The
+  // formation rotates slowly so it never locks into a static arrangement.
+  const formation = shapes.map((_, i) => ({
+    angle: (i / shapes.length) * Math.PI * 2,
+    radius: FORMATION_RADIUS + (i % 3) * 28,
+  }));
+  const FORMATION_ROTATION = (2 * Math.PI) / 14;
 
   let lastCursorX = -Infinity;
   let lastCursorY = -Infinity;
@@ -294,21 +303,26 @@ export const variantFollow: VariantFn = (shapes, getCursor, container) => {
     }
     const cursorIdle = !cursor.active || now - lastMoveAt > IDLE_TIMEOUT_MS;
 
-    let targetX: number;
-    let targetY: number;
+    const t = (now - start) / 1000;
+    let baseX: number;
+    let baseY: number;
     if (cursorIdle) {
-      const t = (now - start) / 1000;
       const orbitRadius = window.innerWidth * 0.2;
-      targetX = width / 2 + Math.cos(t * ORBIT_FREQ) * orbitRadius;
-      targetY = height / 2 + Math.sin(t * ORBIT_FREQ) * orbitRadius;
+      baseX = width / 2 + Math.cos(t * ORBIT_FREQ) * orbitRadius;
+      baseY = height / 2 + Math.sin(t * ORBIT_FREQ) * orbitRadius;
     } else {
-      targetX = cursor.x - rect.left;
-      targetY = cursor.y - rect.top;
+      baseX = cursor.x - rect.left;
+      baseY = cursor.y - rect.top;
     }
+
+    const formationPhase = t * FORMATION_ROTATION;
 
     shapes.forEach((shape, i) => {
       const pos = positions[i];
       const speed = followSpeeds[i];
+      const slot = formation[i];
+      const targetX = baseX + Math.cos(slot.angle + formationPhase) * slot.radius;
+      const targetY = baseY + Math.sin(slot.angle + formationPhase) * slot.radius;
       pos.x += (targetX - pos.x) * speed;
       pos.y += (targetY - pos.y) * speed;
 
