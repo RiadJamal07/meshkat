@@ -9,12 +9,12 @@
 
 @theme {
   /* ─── Semantic surface tokens — flipped by [data-theme] ─── */
-  /* Default page is DARK first: cream reads as background (near-black), */
-  /* ink reads as foreground (warm off-white). A light theme toggles them. */
-  --color-cream: #0f0d0a;
-  --color-cream-soft: #15110c;
-  --color-ink: #f5f1ea;
-  --color-ink-soft: #cbc4b5;
+  /* Default page is LIGHT first: cream is warm off-white, ink is warm */
+  /* near-black. Dark theme is opt-in via the [data-theme='dark'] toggle. */
+  --color-cream: #f5f1ea;
+  --color-cream-soft: #ece6d8;
+  --color-ink: #0f0d0a;
+  --color-ink-soft: #44403a;
 
   /* ─── Brand accent — never flips ─── */
   /* Exact hex pulled from meshkat_studio_cover.jpg (dominant value, 30k+ px). */
@@ -44,12 +44,12 @@
   --shadow-glow: 0 0 120px 24px color-mix(in oklab, var(--color-brick) 28%, transparent);
 }
 
-/* Light theme — opt-in via toggle. Cream and ink flip values. */
-:root[data-theme='light'] {
-  --color-cream: #f5f1ea;
-  --color-cream-soft: #ece6d8;
-  --color-ink: #0f0d0a;
-  --color-ink-soft: #44403a;
+/* Dark theme — opt-in via toggle. Cream and ink flip to dark values. */
+:root[data-theme='dark'] {
+  --color-cream: #0f0d0a;
+  --color-cream-soft: #15110c;
+  --color-ink: #f5f1ea;
+  --color-ink-soft: #cbc4b5;
 }
 
 @layer base {
