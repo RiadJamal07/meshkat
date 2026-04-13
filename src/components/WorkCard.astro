@@ -1,0 +1,193 @@
+---
+import { Image } from 'astro:assets';
+import type { WorkItem } from '~/content/site';
+
+interface Props {
+  item: WorkItem;
+  index: number;
+}
+
+const { item, index } = Astro.props;
+const priority = index < 3;
+---
+
+<button
+  type="button"
+  class="work-card"
+  data-work-card
+  data-work-id={item.id}
+  aria-label={`${item.title.en} — ${item.title.ar}. Open details.`}
+>
+  <figure class="work-card-figure">
+    {item.image && (
+      <Image
+        src={item.image}
+        alt={`${item.title.en} — ${item.title.ar}`}
+        widths={[480, 768, 1200]}
+        sizes="(min-width: 1024px) 32vw, (min-width: 640px) 48vw, 92vw"
+        loading={priority ? 'eager' : 'lazy'}
+        class="work-card-image"
+      />
+    )}
+  </figure>
+
+  <div class="work-card-body">
+    <h3 class="work-card-title">
+      <span>{item.title.en}</span>
+      <span class="work-card-title-ar" lang="ar" dir="rtl">{item.title.ar}</span>
+    </h3>
+
+    <p class="work-card-meta">
+      <span class="work-card-discipline">{item.discipline.en}</span>
+      <span class="work-card-year">{item.year}</span>
+    </p>
+
+    <p class="work-card-meta-ar" lang="ar" dir="rtl">{item.discipline.ar}</p>
+
+    {item.credit && (
+      <p class="work-card-credit">
+        <span>{item.credit.source}</span>
+        <span class="work-card-credit-sep" aria-hidden="true">·</span>
+        <span>{item.credit.license}</span>
+      </p>
+    )}
+  </div>
+</button>
+
+<style>
+  .work-card {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 1rem;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-card);
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+    font: inherit;
+    transition:
+      transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 360ms ease;
+    will-change: transform;
+  }
+
+  .work-card:hover,
+  .work-card:focus-visible {
+    transform: translateY(-4px);
+    border-color: color-mix(in oklab, var(--color-brick) 45%, transparent);
+  }
+
+  .work-card-figure {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: calc(var(--radius-card) - 0.25rem);
+    aspect-ratio: 4 / 5;
+    background: var(--color-cream-soft);
+  }
+
+  .work-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: brightness(0.94) saturate(0.96);
+    transition:
+      transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 360ms ease;
+  }
+
+  .work-card:hover .work-card-image,
+  .work-card:focus-visible .work-card-image {
+    transform: scale(1.03);
+    filter: brightness(1.02) saturate(1.02);
+  }
+
+  .work-card-body {
+    display: grid;
+    gap: 0.4rem;
+    padding-inline: 0.25rem;
+  }
+
+  .work-card-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--color-ink);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .work-card-title-ar {
+    font-family: var(--font-arabic);
+    font-size: 1rem;
+    color: var(--color-ink-soft);
+  }
+
+  .work-card-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0.1rem 0 0;
+    color: var(--color-ink-soft);
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+  }
+
+  .work-card-discipline {
+    flex: 1 1 auto;
+  }
+
+  .work-card-year {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
+
+  .work-card-meta-ar {
+    font-family: var(--font-arabic);
+    font-size: 0.75rem;
+    color: var(--color-ink-soft);
+    opacity: 0.8;
+    margin: 0;
+  }
+
+  .work-card-credit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0.35rem 0 0;
+    color: var(--color-ink-soft);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.65;
+  }
+
+  .work-card-credit-sep {
+    opacity: 0.6;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .work-card,
+    .work-card-image {
+      transition: none;
+    }
+
+    .work-card:hover,
+    .work-card:focus-visible {
+      transform: none;
+    }
+
+    .work-card:hover .work-card-image,
+    .work-card:focus-visible .work-card-image {
+      transform: none;
+    }
+  }
+</style>

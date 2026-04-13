@@ -1,0 +1,389 @@
+---
+import { Image } from 'astro:assets';
+import { site } from '~/content/site';
+import WorkCard from './WorkCard.astro';
+---
+
+<section id="work" class="work container-page">
+  <header class="work-head">
+    <h2 class="work-title">
+      <span>{site.work.title.en}</span>
+      <span class="work-title-ar" lang="ar" dir="rtl">{site.work.title.ar}</span>
+    </h2>
+
+    <p class="work-sub">
+      <span>{site.work.sub.en}</span>
+      <span class="work-sub-ar" lang="ar" dir="rtl">{site.work.sub.ar}</span>
+    </p>
+  </header>
+
+  <div class="work-grid">
+    {site.work.items.map((item, i) => <WorkCard item={item} index={i} />)}
+  </div>
+</section>
+
+<dialog class="work-lightbox" data-work-lightbox aria-label="Work detail">
+  <form method="dialog" class="work-lightbox-dismiss">
+    <button type="submit" class="work-lightbox-close" aria-label="Close detail">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M6 6L18 18M18 6L6 18"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"></path>
+      </svg>
+    </button>
+  </form>
+
+  <div class="work-lightbox-inner">
+    <figure class="work-lightbox-figure">
+      {site.work.items.map((item, i) => (
+        <div class="work-lightbox-slide" data-slide-id={item.id} hidden={i !== 0}>
+          {item.image && (
+            <Image
+              src={item.image}
+              alt={`${item.title.en} — ${item.title.ar}`}
+              widths={[960, 1400, 1800]}
+              sizes="(min-width: 1024px) 70vw, 92vw"
+              loading="lazy"
+              class="work-lightbox-image"
+            />
+          )}
+        </div>
+      ))}
+    </figure>
+
+    <div class="work-lightbox-meta" data-lightbox-meta>
+      {site.work.items.map((item, i) => (
+        <div class="work-lightbox-meta-pane" data-meta-id={item.id} hidden={i !== 0}>
+          <h3 class="work-lightbox-title">
+            <span>{item.title.en}</span>
+            <span lang="ar" dir="rtl">{item.title.ar}</span>
+          </h3>
+          <dl class="work-lightbox-dl">
+            <div>
+              <dt>Discipline</dt>
+              <dd>
+                <span>{item.discipline.en}</span>
+                <span lang="ar" dir="rtl">{item.discipline.ar}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Origin</dt>
+              <dd>
+                <span>{item.client.en}</span>
+                <span lang="ar" dir="rtl">{item.client.ar}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Year</dt>
+              <dd>{item.year}</dd>
+            </div>
+            {item.credit && (
+              <div>
+                <dt>Source</dt>
+                <dd>
+                  <a
+                    href={item.credit.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {item.credit.source}
+                  </a>
+                  <span class="work-lightbox-license">{item.credit.license}</span>
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      ))}
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .work {
+    padding-block: clamp(6rem, 12vh, 10rem);
+  }
+
+  .work-head {
+    display: grid;
+    gap: 1rem;
+    max-width: 52rem;
+    margin-bottom: clamp(3rem, 6vh, 5rem);
+  }
+
+  .work-title {
+    font-family: var(--font-display);
+    font-size: var(--text-h1);
+    font-weight: 400;
+    line-height: 1.05;
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  .work-title span {
+    display: block;
+  }
+
+  .work-title-ar {
+    font-family: var(--font-arabic);
+    font-weight: 500;
+    color: var(--color-ink-soft);
+    margin-top: 0.25rem;
+  }
+
+  .work-sub {
+    color: var(--color-ink-soft);
+    font-size: var(--text-lead);
+    line-height: 1.5;
+    max-width: 42rem;
+  }
+
+  .work-sub span {
+    display: block;
+  }
+
+  .work-sub-ar {
+    font-family: var(--font-arabic);
+    margin-top: 0.35rem;
+    opacity: 0.85;
+  }
+
+  .work-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 4vw, 3rem);
+  }
+
+  @media (min-width: 640px) {
+    .work-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .work-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* ─── Lightbox ─── */
+
+  .work-lightbox {
+    max-width: min(92vw, 1200px);
+    max-height: 92vh;
+    width: 100%;
+    padding: 0;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 14%, transparent);
+    border-radius: calc(var(--radius-card) + 0.25rem);
+    background: var(--color-cream);
+    color: var(--color-ink);
+    overflow: hidden;
+  }
+
+  .work-lightbox::backdrop {
+    background: color-mix(in oklab, #000 78%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  .work-lightbox[open] {
+    display: grid;
+  }
+
+  .work-lightbox-dismiss {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    margin: 0;
+    z-index: 2;
+  }
+
+  .work-lightbox-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 22%, transparent);
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--color-cream) 85%, transparent);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease;
+  }
+
+  .work-lightbox-close:hover {
+    background: var(--color-brick);
+    border-color: var(--color-brick);
+    color: var(--color-surface);
+  }
+
+  .work-lightbox-close svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .work-lightbox-inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-height: 92vh;
+    overflow: auto;
+  }
+
+  @media (min-width: 900px) {
+    .work-lightbox-inner {
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    }
+  }
+
+  .work-lightbox-figure {
+    margin: 0;
+    background: var(--color-cream-soft);
+    display: grid;
+    place-items: center;
+    min-height: 50vh;
+  }
+
+  .work-lightbox-slide {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+  }
+
+  .work-lightbox-image {
+    width: 100%;
+    height: auto;
+    max-height: 92vh;
+    object-fit: contain;
+    display: block;
+  }
+
+  .work-lightbox-meta {
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+  }
+
+  .work-lightbox-meta-pane {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .work-lightbox-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--color-ink);
+    margin: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .work-lightbox-title span[lang='ar'] {
+    font-family: var(--font-arabic);
+    font-weight: 500;
+    color: var(--color-ink-soft);
+    font-size: 1.125rem;
+  }
+
+  .work-lightbox-dl {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+  }
+
+  .work-lightbox-dl > div {
+    display: grid;
+    gap: 0.3rem;
+    border-top: 1px solid color-mix(in oklab, var(--color-ink) 10%, transparent);
+    padding-top: 1rem;
+  }
+
+  .work-lightbox-dl dt {
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+    opacity: 0.7;
+  }
+
+  .work-lightbox-dl dd {
+    margin: 0;
+    color: var(--color-ink);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .work-lightbox-dl dd span[lang='ar'] {
+    font-family: var(--font-arabic);
+    color: var(--color-ink-soft);
+    font-size: 0.85rem;
+  }
+
+  .work-lightbox-dl a {
+    color: var(--color-brick);
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-brick) 40%, transparent);
+    transition: border-color 220ms ease;
+  }
+
+  .work-lightbox-dl a:hover,
+  .work-lightbox-dl a:focus-visible {
+    border-bottom-color: var(--color-brick);
+  }
+
+  .work-lightbox-license {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+    opacity: 0.7;
+  }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-work-lightbox]');
+  const cards = document.querySelectorAll<HTMLButtonElement>('[data-work-card]');
+  const slides = document.querySelectorAll<HTMLElement>('[data-slide-id]');
+  const metas = document.querySelectorAll<HTMLElement>('[data-meta-id]');
+
+  if (dialog) {
+    const showPane = (id: string) => {
+      slides.forEach((slide) => {
+        slide.toggleAttribute('hidden', slide.dataset.slideId !== id);
+      });
+      metas.forEach((meta) => {
+        meta.toggleAttribute('hidden', meta.dataset.metaId !== id);
+      });
+    };
+
+    cards.forEach((card) => {
+      card.addEventListener('click', () => {
+        const id = card.dataset.workId;
+        if (!id) return;
+        showPane(id);
+        if (typeof dialog.showModal === 'function') {
+          dialog.showModal();
+        } else {
+          dialog.setAttribute('open', '');
+        }
+      });
+    });
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  }
+</script>
