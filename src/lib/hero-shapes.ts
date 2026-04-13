@@ -132,18 +132,18 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
   // toward the target every frame — so direction varies continuously
   // but the path is always smooth, never jittery. Speed stays close to
   // `TARGET_SPEED` except when cursor or zone forces push it.
-  const TARGET_SPEED = 26;
-  const SPEED_FLOOR = 18;
-  const MAX_SPEED = 42;
-  const HEADING_LERP = 0.045;
-  const TARGET_DRIFT_RATE = 0.9;
-  const SHUFFLE_MIN_INTERVAL = 3.5;
-  const SHUFFLE_MAX_INTERVAL = 6.5;
+  const TARGET_SPEED = 13;
+  const SPEED_FLOOR = 9;
+  const MAX_SPEED = 24;
+  const HEADING_LERP = 0.035;
+  const TARGET_DRIFT_RATE = 0.6;
+  const SHUFFLE_MIN_INTERVAL = 5;
+  const SHUFFLE_MAX_INTERVAL = 9;
   const SHUFFLE_RANGE = Math.PI * 0.75;
   const CURSOR_REPEL_REACH = 300;
-  const CURSOR_REPEL_FORCE = 110;
-  const ZONE_PUSH_FORCE = 240;
-  const DAMPING = 0.992;
+  const CURSOR_REPEL_FORCE = 90;
+  const ZONE_PUSH_FORCE = 190;
+  const DAMPING = 0.994;
   const SCROLL_BOOST = 2.2;
 
   const rect0 = container.getBoundingClientRect();
