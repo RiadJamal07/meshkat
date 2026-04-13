@@ -94,43 +94,58 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
 };
 
 /* ─── Variant B — Scatter
- * Shapes rest at anchors. When cursor enters a 220px radius, each shape
- * glides AWAY on a quadratic falloff curve, max 36px displacement. Returns
- * to anchor with soft elastic ease on leave. */
+ * A slow idle Lissajous wobble runs constantly so shapes are never fully
+ * at rest. On top of that, when cursor enters a 260px radius each shape
+ * glides AWAY on a quadratic falloff curve, max 48px displacement. The
+ * wobble target + scatter target + scroll offset are all composed before
+ * being handed to a single gsap.quickTo per axis — the quickTo smoothing
+ * acts as damping on the combined signal. Elastic return on cleanup. */
 export const variantScatter: VariantFn = (shapes, getCursor) => {
   const REACH = 260;
   const MAX_DISP = 48;
+  const WOBBLE_AMP_X = 7;
+  const WOBBLE_AMP_Y = 9;
+  const WOBBLE_FREQ_X = (2 * Math.PI) / 12;
+  const WOBBLE_FREQ_Y = (2 * Math.PI) / 14;
 
   const quickTos = shapes.map((shape) => ({
     x: gsap.quickTo(shape, 'x', { duration: 0.32, ease: 'power2.out' }),
     y: gsap.quickTo(shape, 'y', { duration: 0.32, ease: 'power2.out' }),
   }));
   const scrollRates = shapes.map(readScrollRate);
+  const wobblePhases = shapes.map((_, i) => ({
+    x: (i * 1.3) % (Math.PI * 2),
+    y: (i * 2.1) % (Math.PI * 2),
+  }));
+  const start = performance.now();
 
   const tick = () => {
+    const t = (performance.now() - start) / 1000;
     const cursor = getCursor();
     shapes.forEach((shape, i) => {
+      const wobbleX = Math.sin(t * WOBBLE_FREQ_X + wobblePhases[i].x) * WOBBLE_AMP_X;
+      const wobbleY = Math.sin(t * WOBBLE_FREQ_Y + wobblePhases[i].y) * WOBBLE_AMP_Y;
       const scrollY = -cursor.scrollOffset * scrollRates[i];
       const rect = shape.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       if (!cursor.active) {
-        quickTos[i].x(0);
-        quickTos[i].y(scrollY);
+        quickTos[i].x(wobbleX);
+        quickTos[i].y(wobbleY + scrollY);
         return;
       }
       const dx = cx - cursor.x;
       const dy = cy - cursor.y;
       const dist = Math.hypot(dx, dy);
       if (dist > REACH || dist === 0) {
-        quickTos[i].x(0);
-        quickTos[i].y(scrollY);
+        quickTos[i].x(wobbleX);
+        quickTos[i].y(wobbleY + scrollY);
         return;
       }
       const falloff = (1 - dist / REACH) ** 2;
       const offset = falloff * MAX_DISP;
-      quickTos[i].x((dx / dist) * offset);
-      quickTos[i].y((dy / dist) * offset + scrollY);
+      quickTos[i].x((dx / dist) * offset + wobbleX);
+      quickTos[i].y((dy / dist) * offset + wobbleY + scrollY);
     });
   };
 
