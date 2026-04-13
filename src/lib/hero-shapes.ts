@@ -160,17 +160,22 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
 };
 
 /* ─── Variant C — Constellation
- * Shapes do a slow y-axis breath (±4px, 6s period, phase-offset) and are
- * otherwise still. When cursor enters the hero, a dedicated SVG overlay
- * draws thin brick-60% lines to the 3 nearest shapes, distance-weighted
- * opacity, fade out past 280px. Breath is hand-computed in the ticker so
- * transforms have a single writer. */
+ * Shapes do a slow y-axis breath (±6px, 4s period) with a gentler x-axis
+ * sway layered on top (±4px, 5s period, independent phase-offset) so they
+ * drift subtly sideways as they breathe, never fully at rest. When the
+ * cursor enters the hero, a dedicated SVG overlay draws thin brick lines
+ * to the 3 nearest shapes, distance-weighted opacity, fade out past 280px.
+ * Breath + sway are hand-computed in the ticker so transforms have a
+ * single writer. */
 export const variantConstellation: VariantFn = (shapes, getCursor, container) => {
   const REACH = 280;
   const NEAREST_COUNT = 3;
   const BREATH_AMP = 6;
   const BREATH_FREQ = (2 * Math.PI) / 4;
+  const SWAY_AMP = 4;
+  const SWAY_FREQ = (2 * Math.PI) / 5;
   const phases = shapes.map((_, i) => (i * 0.9) % 4);
+  const swayPhases = shapes.map((_, i) => (i * 1.7) % 5);
   const scrollRates = shapes.map(readScrollRate);
   const start = performance.now();
 
@@ -196,8 +201,9 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
 
     shapes.forEach((shape, i) => {
       const breath = Math.sin(t * BREATH_FREQ + phases[i]) * BREATH_AMP;
+      const sway = Math.sin(t * SWAY_FREQ + swayPhases[i]) * SWAY_AMP;
       const scrollY = -cursor.scrollOffset * scrollRates[i];
-      gsap.set(shape, { x: 0, y: breath + scrollY });
+      gsap.set(shape, { x: sway, y: breath + scrollY });
     });
 
     if (!cursor.active) {
