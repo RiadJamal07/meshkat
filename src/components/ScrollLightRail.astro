@@ -1,0 +1,104 @@
+---
+---
+
+<div class="scroll-rail" data-scroll-rail aria-hidden="true">
+  <div class="scroll-rail-inner" data-scroll-rail-inner>
+    <div class="scroll-rail-bloom" data-scroll-rail-bloom></div>
+    <div class="scroll-rail-bar"></div>
+  </div>
+</div>
+
+<style>
+  .scroll-rail {
+    position: fixed;
+    top: 0;
+    right: clamp(0.75rem, 1.2vw, 1.25rem);
+    width: 2px;
+    height: 100svh;
+    pointer-events: none;
+    z-index: 55;
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .scroll-rail {
+      display: block;
+    }
+  }
+
+  .scroll-rail-inner {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+
+  .scroll-rail-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 120px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      color-mix(in oklab, var(--color-brick) 75%, transparent) 35%,
+      color-mix(in oklab, var(--color-brick) 95%, transparent) 50%,
+      color-mix(in oklab, var(--color-brick) 75%, transparent) 65%,
+      transparent 100%
+    );
+    border-radius: 2px;
+  }
+
+  .scroll-rail-bloom {
+    position: absolute;
+    top: -40px;
+    left: -79px;
+    width: 160px;
+    height: 200px;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(241, 105, 57, 0.35) 0%,
+      rgba(241, 105, 57, 0.12) 40%,
+      transparent 72%
+    );
+    filter: blur(14px);
+    mix-blend-mode: screen;
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  const RAIL_LENGTH = 120;
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const inner = document.querySelector<HTMLElement>('[data-scroll-rail-inner]');
+
+  if (inner) {
+    if (reduce) {
+      const centered = Math.max(0, window.innerHeight / 2 - RAIL_LENGTH / 2);
+      inner.style.transform = `translate3d(0, ${centered}px, 0)`;
+    } else {
+      gsap.registerPlugin(ScrollTrigger);
+
+      const endY = () => Math.max(0, window.innerHeight - RAIL_LENGTH);
+
+      gsap.set(inner, { y: 0 });
+
+      ScrollTrigger.create({
+        trigger: document.body,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: true,
+        animation: gsap.to(inner, {
+          y: endY,
+          ease: 'none',
+        }),
+        invalidateOnRefresh: true,
+      });
+    }
+  }
+</script>
