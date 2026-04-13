@@ -1,0 +1,175 @@
+---
+import { site } from '~/content/site';
+
+const instagramHandle = site.contact.instagram.replace(/^@/, '');
+const instagramUrl = `https://instagram.com/${instagramHandle}`;
+---
+
+<section id="contact" class="contact container-page">
+  <div class="contact-grid">
+    <header class="contact-head">
+      <h2 class="contact-title">
+        <span>{site.contact.title.en}</span>
+        <span class="contact-title-ar" lang="ar" dir="rtl">{site.contact.title.ar}</span>
+      </h2>
+
+      <p class="contact-sub">
+        <span>{site.contact.sub.en}</span>
+        <span class="contact-sub-ar" lang="ar" dir="rtl">{site.contact.sub.ar}</span>
+      </p>
+    </header>
+
+    <address class="contact-lines">
+      <a class="contact-line" href={`mailto:${site.contact.email}`}>
+        <span class="contact-line-label">Email</span>
+        <span class="contact-line-value">{site.contact.email}</span>
+      </a>
+
+      <a
+        class="contact-line"
+        href={instagramUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span class="contact-line-label">Instagram</span>
+        <span class="contact-line-value">{site.contact.instagram}</span>
+      </a>
+
+      <div class="contact-line contact-line-static">
+        <span class="contact-line-label">Studio</span>
+        <span class="contact-line-value">
+          <span>{site.contact.location.en}</span>
+          <span class="contact-line-value-ar" lang="ar" dir="rtl">
+            {site.contact.location.ar}
+          </span>
+        </span>
+      </div>
+    </address>
+  </div>
+</section>
+
+<style>
+  .contact {
+    padding-block: clamp(6rem, 12vh, 10rem);
+  }
+
+  .contact-grid {
+    display: grid;
+    gap: clamp(3rem, 6vh, 5rem);
+    align-items: start;
+  }
+
+  @media (min-width: 900px) {
+    .contact-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(3rem, 6vw, 6rem);
+    }
+  }
+
+  .contact-head {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 32rem;
+  }
+
+  .contact-title {
+    font-family: var(--font-display);
+    font-size: var(--text-h1);
+    font-weight: 400;
+    line-height: 1.05;
+    color: var(--color-ink);
+    margin: 0;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .contact-title-ar {
+    font-family: var(--font-arabic);
+    font-weight: 500;
+    color: var(--color-ink-soft);
+  }
+
+  .contact-sub {
+    color: var(--color-ink-soft);
+    font-size: var(--text-lead);
+    line-height: 1.5;
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+  }
+
+  .contact-sub-ar {
+    font-family: var(--font-arabic);
+    opacity: 0.85;
+  }
+
+  .contact-lines {
+    font-style: normal;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .contact-line {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, auto) 1fr;
+    align-items: baseline;
+    gap: 1.25rem;
+    padding-block: 1.15rem;
+    text-decoration: none;
+    color: var(--color-ink);
+    border-top: 1px solid color-mix(in oklab, var(--color-ink) 12%, transparent);
+    transition:
+      color 220ms ease,
+      padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .contact-line:last-child {
+    border-bottom: 1px solid color-mix(in oklab, var(--color-ink) 12%, transparent);
+  }
+
+  .contact-line-label {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+    opacity: 0.7;
+  }
+
+  .contact-line-value {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.2vw, 2.25rem);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    word-break: break-word;
+  }
+
+  .contact-line-value-ar {
+    display: block;
+    font-family: var(--font-arabic);
+    font-size: clamp(1rem, 1.6vw, 1.125rem);
+    color: var(--color-ink-soft);
+    margin-top: 0.25rem;
+  }
+
+  a.contact-line:hover,
+  a.contact-line:focus-visible {
+    color: var(--color-brick);
+    padding-inline-start: 0.5rem;
+  }
+
+  .contact-line-static {
+    cursor: default;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-line {
+      transition: color 220ms ease;
+    }
+
+    a.contact-line:hover,
+    a.contact-line:focus-visible {
+      padding-inline-start: 0;
+    }
+  }
+</style>
