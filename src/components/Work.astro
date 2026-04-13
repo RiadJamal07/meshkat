@@ -36,9 +36,11 @@ import WorkCard from './WorkCard.astro';
   </form>
 
   <div class="work-lightbox-inner">
-    <figure class="work-lightbox-figure">
-      {site.work.items.map((item, i) => (
-        <div class="work-lightbox-slide" data-slide-id={item.id} hidden={i !== 0}>
+    <figure class="work-lightbox-figure" data-lightbox-figure></figure>
+
+    <template data-lightbox-slides>
+      {site.work.items.map((item) => (
+        <div class="work-lightbox-slide" data-slide-id={item.id}>
           {item.image && (
             <Image
               src={item.image}
@@ -51,7 +53,7 @@ import WorkCard from './WorkCard.astro';
           )}
         </div>
       ))}
-    </figure>
+    </template>
 
     <div class="work-lightbox-meta" data-lightbox-meta>
       {site.work.items.map((item, i) => (
@@ -356,14 +358,35 @@ import WorkCard from './WorkCard.astro';
 <script>
   const dialog = document.querySelector<HTMLDialogElement>('[data-work-lightbox]');
   const cards = document.querySelectorAll<HTMLButtonElement>('[data-work-card]');
-  const slides = document.querySelectorAll<HTMLElement>('[data-slide-id]');
+  const figure = document.querySelector<HTMLElement>('[data-lightbox-figure]');
+  const slidesTemplate = document.querySelector<HTMLTemplateElement>('[data-lightbox-slides]');
   const metas = document.querySelectorAll<HTMLElement>('[data-meta-id]');
 
-  if (dialog) {
+  if (dialog && figure && slidesTemplate) {
+    /* Slide clones live inside a <template> so the preload scanner never
+     * sees their <source srcset> entries at page load. We clone per-id on
+     * first use and cache the node so reopens are instant. */
+    const mountedSlides = new Map<string, HTMLElement>();
+
+    const getSlide = (id: string): HTMLElement | null => {
+      const cached = mountedSlides.get(id);
+      if (cached) return cached;
+      const match = slidesTemplate.content.querySelector<HTMLElement>(
+        `[data-slide-id="${CSS.escape(id)}"]`,
+      );
+      if (!match) return null;
+      const clone = match.cloneNode(true) as HTMLElement;
+      mountedSlides.set(id, clone);
+      figure.appendChild(clone);
+      return clone;
+    };
+
     const showPane = (id: string) => {
-      slides.forEach((slide) => {
+      for (const slide of mountedSlides.values()) {
         slide.toggleAttribute('hidden', slide.dataset.slideId !== id);
-      });
+      }
+      const active = getSlide(id);
+      if (active) active.removeAttribute('hidden');
       metas.forEach((meta) => {
         meta.toggleAttribute('hidden', meta.dataset.metaId !== id);
       });
