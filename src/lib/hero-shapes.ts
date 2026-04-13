@@ -118,12 +118,18 @@ const sampleRandomSafePosition = (width: number, height: number) => {
 };
 
 export const variantWander: VariantFn = (shapes, getCursor, container) => {
-  const MAX_SPEED = 24;
-  const NUDGE_MAGNITUDE = 14;
-  const CURSOR_REPEL_REACH = 200;
-  const CURSOR_REPEL_FORCE = 30;
-  const ZONE_PUSH_FORCE = 180;
-  const DAMPING = 0.985;
+  // Target drift is rotation-based, not additive, so shapes keep their
+  // speed while continuously changing heading. A mild speed floor makes
+  // sure nothing stalls in dead air and a light damping keeps cursor
+  // repulsion from blowing up over time.
+  const TARGET_SPEED = 22;
+  const SPEED_FLOOR = 16;
+  const MAX_SPEED = 36;
+  const TURN_RATE = 1.8;
+  const CURSOR_REPEL_REACH = 220;
+  const CURSOR_REPEL_FORCE = 60;
+  const ZONE_PUSH_FORCE = 200;
+  const DAMPING = 0.998;
 
   const rect0 = container.getBoundingClientRect();
   const anchors = shapes.map((shape) => {
@@ -135,10 +141,10 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
   });
 
   const positions = shapes.map(() => sampleRandomSafePosition(rect0.width, rect0.height));
-  const velocities = shapes.map(() => ({
-    x: (Math.random() - 0.5) * MAX_SPEED,
-    y: (Math.random() - 0.5) * MAX_SPEED,
-  }));
+  const velocities = shapes.map(() => {
+    const angle = Math.random() * Math.PI * 2;
+    return { x: Math.cos(angle) * TARGET_SPEED, y: Math.sin(angle) * TARGET_SPEED };
+  });
 
   const scrollRates = shapes.map(readScrollRate);
   let lastTime = performance.now();
@@ -160,8 +166,16 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
       const pos = positions[i];
       const vel = velocities[i];
 
-      vel.x += (Math.random() - 0.5) * NUDGE_MAGNITUDE * dt;
-      vel.y += (Math.random() - 0.5) * NUDGE_MAGNITUDE * dt;
+      // Rotate the velocity vector by a small random angle each frame —
+      // preserves speed, changes heading. The result is a smooth wander
+      // path rather than a jittery random walk.
+      const turn = (Math.random() - 0.5) * TURN_RATE * dt;
+      const cosA = Math.cos(turn);
+      const sinA = Math.sin(turn);
+      const rotatedX = vel.x * cosA - vel.y * sinA;
+      const rotatedY = vel.x * sinA + vel.y * cosA;
+      vel.x = rotatedX;
+      vel.y = rotatedY;
 
       if (cursor.active) {
         const dx = pos.x - (cursor.x - rect.left);
@@ -187,10 +201,23 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
       vel.x *= DAMPING;
       vel.y *= DAMPING;
 
-      const speed = Math.hypot(vel.x, vel.y);
+      let speed = Math.hypot(vel.x, vel.y);
       if (speed > MAX_SPEED) {
         vel.x = (vel.x / speed) * MAX_SPEED;
         vel.y = (vel.y / speed) * MAX_SPEED;
+        speed = MAX_SPEED;
+      }
+      // Keep each shape above a minimum speed so nothing drifts to a halt.
+      if (speed < SPEED_FLOOR) {
+        if (speed < 0.01) {
+          const fallbackAngle = Math.random() * Math.PI * 2;
+          vel.x = Math.cos(fallbackAngle) * SPEED_FLOOR;
+          vel.y = Math.sin(fallbackAngle) * SPEED_FLOOR;
+        } else {
+          const scale = SPEED_FLOOR / speed;
+          vel.x *= scale;
+          vel.y *= scale;
+        }
       }
 
       pos.x += vel.x * dt * 60;
