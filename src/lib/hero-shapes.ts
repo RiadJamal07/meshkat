@@ -104,7 +104,55 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
   };
 };
 
-export const variantScatter: VariantFn = noop;
+/* ─── Variant B — Scatter
+ * Shapes rest at anchors. When cursor enters a 220px radius, each shape
+ * glides AWAY on a quadratic falloff curve, max 36px displacement. Returns
+ * to anchor with soft elastic ease on leave. */
+export const variantScatter: VariantFn = (shapes, getCursor) => {
+  const REACH = 220;
+  const MAX_DISP = 36;
+
+  const quickTos = shapes.map((shape) => ({
+    x: gsap.quickTo(shape, 'x', { duration: 0.55, ease: 'power2.out' }),
+    y: gsap.quickTo(shape, 'y', { duration: 0.55, ease: 'power2.out' }),
+  }));
+
+  const tick = () => {
+    const cursor = getCursor();
+    shapes.forEach((shape, i) => {
+      const rect = shape.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      if (!cursor.active) {
+        quickTos[i].x(0);
+        quickTos[i].y(0);
+        return;
+      }
+      const dx = cx - cursor.x;
+      const dy = cy - cursor.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > REACH || dist === 0) {
+        quickTos[i].x(0);
+        quickTos[i].y(0);
+        return;
+      }
+      const falloff = (1 - dist / REACH) ** 2;
+      const offset = falloff * MAX_DISP;
+      quickTos[i].x((dx / dist) * offset);
+      quickTos[i].y((dy / dist) * offset);
+    });
+  };
+
+  gsap.ticker.add(tick);
+
+  return () => {
+    gsap.ticker.remove(tick);
+    shapes.forEach((shape) => {
+      gsap.to(shape, { x: 0, y: 0, duration: 0.9, ease: 'elastic.out(1, 0.5)' });
+    });
+  };
+};
+
 export const variantConstellation: VariantFn = noop;
 
 export const variants: Record<VariantId, VariantFn> = {
