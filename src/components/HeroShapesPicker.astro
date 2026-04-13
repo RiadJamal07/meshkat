@@ -67,6 +67,22 @@ const variants = [
     color: var(--color-surface);
   }
 
+  .hero-shapes-pill:active {
+    border-color: var(--color-brick);
+    color: var(--color-brick);
+  }
+
+  .hero-shapes-pill[aria-pressed='true']:active {
+    color: var(--color-surface);
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .hero-shapes-pill {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .hero-shapes-pill {
       transition: none;

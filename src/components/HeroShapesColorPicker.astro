@@ -70,6 +70,22 @@ const modes = [
     color: var(--color-surface);
   }
 
+  .hero-shapes-color-pill:active {
+    border-color: var(--color-brick);
+    color: var(--color-brick);
+  }
+
+  .hero-shapes-color-pill[aria-pressed='true']:active {
+    color: var(--color-surface);
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .hero-shapes-color-pill {
+      min-height: 44px;
+      padding-inline: 1.1rem;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .hero-shapes-color-pill {
       transition: none;

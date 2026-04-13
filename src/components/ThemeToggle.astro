@@ -65,6 +65,18 @@ const { labelEn = 'Toggle theme', labelAr = 'تبديل المظهر' } = Astro.
       color 220ms ease;
   }
 
+  .theme-toggle:active {
+    border-color: var(--color-brick);
+    color: var(--color-brick);
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .theme-toggle {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+  }
+
   .theme-toggle:hover {
     background: color-mix(in oklab, var(--color-brick) 12%, transparent);
     border-color: var(--color-brick);

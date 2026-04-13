@@ -203,7 +203,7 @@ const year = new Date().getFullYear();
 
   .footer-nav a {
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.55rem;
     color: color-mix(in oklab, var(--color-on-surface) 75%, transparent);
     text-decoration: none;
@@ -213,8 +213,15 @@ const year = new Date().getFullYear();
     transition: color 220ms ease;
   }
 
+  @media (hover: none) and (pointer: coarse) {
+    .footer-nav a {
+      min-height: 44px;
+    }
+  }
+
   .footer-nav a:hover,
-  .footer-nav a:focus-visible {
+  .footer-nav a:focus-visible,
+  .footer-nav a:active {
     color: var(--color-brick);
   }
 
