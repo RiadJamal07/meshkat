@@ -55,11 +55,7 @@ const shapes: ShapeDef[] = [
     top: var(--anchor-y);
     opacity: var(--shape-opacity);
     will-change: transform;
-    transform: translate3d(
-      calc(-50% + var(--parallax-x, 0px)),
-      calc(-50% + var(--parallax-y, 0px)),
-      0
-    );
+    transform: translate3d(-50%, -50%, 0);
     backface-visibility: hidden;
   }
 
@@ -119,6 +115,8 @@ const shapes: ShapeDef[] = [
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const coarse = window.matchMedia('(pointer: coarse)').matches;
 
+    gsap.set(shapes, { xPercent: -50, yPercent: -50 });
+
     const cursor: Cursor = { x: -9999, y: -9999, active: false };
 
     const onMove = (e: MouseEvent) => {
@@ -149,10 +147,6 @@ const shapes: ShapeDef[] = [
         cleanup = null;
       }
       gsap.killTweensOf(shapes);
-      shapes.forEach((shape) => {
-        shape.style.removeProperty('--parallax-x');
-        shape.style.removeProperty('--parallax-y');
-      });
       gsap.set(shapes, { x: 0, y: 0 });
 
       if (reduce || coarse) return;

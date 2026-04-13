@@ -17,72 +17,60 @@ export type VariantFn = (
 ) => Cleanup;
 
 /* ─── Variant A — Drift
- * Phase-offset Lissajous orbit via infinite yoyo tweens (independent x/y).
- * An rAF ticker adds a weighted inverse-parallax offset from the shared
- * cursor on top of the orbit, so cursor-near shapes drift slightly away
- * from the pointer while still following their own slow loop. */
+ * Phase-offset Lissajous orbit hand-computed on the ticker. A weighted
+ * inverse-parallax offset from the shared cursor layers on top — shapes
+ * near the pointer drift slightly away while still following their own
+ * slow loop. Single writer per frame (gsap.set) so nothing fights over
+ * the transform. */
 export const variantDrift: VariantFn = (shapes, getCursor) => {
   const PARALLAX_MAX = 14;
   const PARALLAX_REACH = 480;
-  const orbits: gsap.core.Tween[] = [];
+  const params = shapes.map((_, i) => ({
+    ampX: 10 + (i % 3) * 3,
+    ampY: 12 + ((i + 1) % 3) * 3,
+    freqX: (2 * Math.PI) / (22 + (i * 2.7) % 8),
+    freqY: (2 * Math.PI) / ((22 + (i * 2.7) % 8) * 0.83),
+    phaseX: (i * 1.7) % (Math.PI * 2),
+    phaseY: (i * 1.1) % (Math.PI * 2),
+  }));
   const parallax = shapes.map(() => ({ x: 0, y: 0 }));
-
-  shapes.forEach((shape, i) => {
-    const ampX = 10 + (i % 3) * 3;
-    const ampY = 12 + ((i + 1) % 3) * 3;
-    const dur = 22 + (i * 2.7) % 8;
-    const phase = (i * 1.7) % (Math.PI * 2);
-
-    orbits.push(
-      gsap.to(shape, {
-        x: `+=${ampX}`,
-        duration: dur,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-        delay: -phase,
-      }),
-      gsap.to(shape, {
-        y: `+=${ampY}`,
-        duration: dur * 0.83,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-        delay: -phase * 0.6,
-      }),
-    );
-  });
+  const start = performance.now();
 
   const tick = () => {
+    const t = (performance.now() - start) / 1000;
     const cursor = getCursor();
-    if (!cursor.active) {
-      parallax.forEach((p) => {
-        p.x += (0 - p.x) * 0.06;
-        p.y += (0 - p.y) * 0.06;
-      });
-    } else {
-      shapes.forEach((shape, i) => {
+
+    shapes.forEach((shape, i) => {
+      const p = params[i];
+      const orbitX = Math.sin(t * p.freqX + p.phaseX) * p.ampX;
+      const orbitY = Math.sin(t * p.freqY + p.phaseY) * p.ampY;
+
+      if (!cursor.active) {
+        parallax[i].x += (0 - parallax[i].x) * 0.06;
+        parallax[i].y += (0 - parallax[i].y) * 0.06;
+      } else {
         const rect = shape.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
         const dx = cursor.x - cx;
         const dy = cursor.y - cy;
-        const dist = Math.hypot(dx, dy);
+        const dist = Math.hypot(dx, dy) || 1;
         if (dist > PARALLAX_REACH) {
           parallax[i].x += (0 - parallax[i].x) * 0.08;
           parallax[i].y += (0 - parallax[i].y) * 0.08;
-          return;
+        } else {
+          const weight = 1 - dist / PARALLAX_REACH;
+          const targetX = -(dx / dist) * weight * PARALLAX_MAX;
+          const targetY = -(dy / dist) * weight * PARALLAX_MAX;
+          parallax[i].x += (targetX - parallax[i].x) * 0.08;
+          parallax[i].y += (targetY - parallax[i].y) * 0.08;
         }
-        const weight = 1 - dist / PARALLAX_REACH;
-        const targetX = -(dx / dist) * weight * PARALLAX_MAX;
-        const targetY = -(dy / dist) * weight * PARALLAX_MAX;
-        parallax[i].x += (targetX - parallax[i].x) * 0.08;
-        parallax[i].y += (targetY - parallax[i].y) * 0.08;
+      }
+
+      gsap.set(shape, {
+        x: orbitX + parallax[i].x,
+        y: orbitY + parallax[i].y,
       });
-    }
-    shapes.forEach((shape, i) => {
-      shape.style.setProperty('--parallax-x', `${parallax[i].x}px`);
-      shape.style.setProperty('--parallax-y', `${parallax[i].y}px`);
     });
   };
 
@@ -90,12 +78,7 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
 
   return () => {
     gsap.ticker.remove(tick);
-    orbits.forEach((t) => t.kill());
-    shapes.forEach((shape) => {
-      shape.style.removeProperty('--parallax-x');
-      shape.style.removeProperty('--parallax-y');
-      gsap.set(shape, { x: 0, y: 0 });
-    });
+    gsap.set(shapes, { x: 0, y: 0 });
   };
 };
 
@@ -149,28 +132,18 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
 };
 
 /* ─── Variant C — Constellation
- * Shapes do a slow y-axis breath (±4px, 6s, phase-offset) and are otherwise
- * still. When cursor enters the hero, a dedicated SVG overlay draws thin
- * brick-60% lines to the 3 nearest shapes, distance-weighted opacity,
- * fade out past 280px. Lines are <line> elements updated via setAttribute
- * on the gsap ticker — no per-frame tweens. */
+ * Shapes do a slow y-axis breath (±4px, 6s period, phase-offset) and are
+ * otherwise still. When cursor enters the hero, a dedicated SVG overlay
+ * draws thin brick-60% lines to the 3 nearest shapes, distance-weighted
+ * opacity, fade out past 280px. Breath is hand-computed in the ticker so
+ * transforms have a single writer. */
 export const variantConstellation: VariantFn = (shapes, getCursor, container) => {
   const REACH = 280;
   const NEAREST_COUNT = 3;
-
-  const breaths: gsap.core.Tween[] = [];
-  shapes.forEach((shape, i) => {
-    breaths.push(
-      gsap.to(shape, {
-        y: '+=4',
-        duration: 6,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-        delay: -(i * 0.9) % 6,
-      }),
-    );
-  });
+  const BREATH_AMP = 4;
+  const BREATH_FREQ = (2 * Math.PI) / 6;
+  const phases = shapes.map((_, i) => (i * 0.9) % 6);
+  const start = performance.now();
 
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS, 'svg');
@@ -189,6 +162,13 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
   container.appendChild(svg);
 
   const tick = () => {
+    const t = (performance.now() - start) / 1000;
+
+    shapes.forEach((shape, i) => {
+      const y = Math.sin(t * BREATH_FREQ + phases[i]) * BREATH_AMP;
+      gsap.set(shape, { x: 0, y });
+    });
+
     const cursor = getCursor();
     if (!cursor.active) {
       lines.forEach((line) => line.setAttribute('opacity', '0'));
@@ -226,7 +206,6 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
 
   return () => {
     gsap.ticker.remove(tick);
-    breaths.forEach((t) => t.kill());
     svg.remove();
     gsap.set(shapes, { x: 0, y: 0 });
   };
