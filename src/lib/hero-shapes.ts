@@ -16,11 +16,6 @@ export type VariantFn = (
   container: HTMLElement,
 ) => Cleanup;
 
-const noop: VariantFn = (shapes) => {
-  gsap.set(shapes, { x: 0, y: 0 });
-  return () => {};
-};
-
 /* ─── Variant A — Drift
  * Phase-offset Lissajous orbit via infinite yoyo tweens (independent x/y).
  * An rAF ticker adds a weighted inverse-parallax offset from the shared
@@ -153,7 +148,89 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
   };
 };
 
-export const variantConstellation: VariantFn = noop;
+/* ─── Variant C — Constellation
+ * Shapes do a slow y-axis breath (±4px, 6s, phase-offset) and are otherwise
+ * still. When cursor enters the hero, a dedicated SVG overlay draws thin
+ * brick-60% lines to the 3 nearest shapes, distance-weighted opacity,
+ * fade out past 280px. Lines are <line> elements updated via setAttribute
+ * on the gsap ticker — no per-frame tweens. */
+export const variantConstellation: VariantFn = (shapes, getCursor, container) => {
+  const REACH = 280;
+  const NEAREST_COUNT = 3;
+
+  const breaths: gsap.core.Tween[] = [];
+  shapes.forEach((shape, i) => {
+    breaths.push(
+      gsap.to(shape, {
+        y: '+=4',
+        duration: 6,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+        delay: -(i * 0.9) % 6,
+      }),
+    );
+  });
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.classList.add('hero-shapes-lines');
+  svg.setAttribute('aria-hidden', 'true');
+  const lines: SVGLineElement[] = [];
+  for (let i = 0; i < NEAREST_COUNT; i++) {
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('stroke', 'var(--color-brick)');
+    line.setAttribute('stroke-width', '1');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('opacity', '0');
+    svg.appendChild(line);
+    lines.push(line);
+  }
+  container.appendChild(svg);
+
+  const tick = () => {
+    const cursor = getCursor();
+    if (!cursor.active) {
+      lines.forEach((line) => line.setAttribute('opacity', '0'));
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const cxLocal = cursor.x - rect.left;
+    const cyLocal = cursor.y - rect.top;
+    const ranked = shapes
+      .map((shape) => {
+        const r = shape.getBoundingClientRect();
+        const sx = r.left + r.width / 2 - rect.left;
+        const sy = r.top + r.height / 2 - rect.top;
+        const dist = Math.hypot(sx - cxLocal, sy - cyLocal);
+        return { sx, sy, dist };
+      })
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, NEAREST_COUNT);
+    ranked.forEach((node, i) => {
+      const line = lines[i];
+      if (node.dist > REACH) {
+        line.setAttribute('opacity', '0');
+        return;
+      }
+      const opacity = (1 - node.dist / REACH) * 0.6;
+      line.setAttribute('x1', `${cxLocal}`);
+      line.setAttribute('y1', `${cyLocal}`);
+      line.setAttribute('x2', `${node.sx}`);
+      line.setAttribute('y2', `${node.sy}`);
+      line.setAttribute('opacity', `${opacity}`);
+    });
+  };
+
+  gsap.ticker.add(tick);
+
+  return () => {
+    gsap.ticker.remove(tick);
+    breaths.forEach((t) => t.kill());
+    svg.remove();
+    gsap.set(shapes, { x: 0, y: 0 });
+  };
+};
 
 export const variants: Record<VariantId, VariantFn> = {
   A: variantDrift,
