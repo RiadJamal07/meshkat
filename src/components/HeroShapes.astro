@@ -67,14 +67,6 @@ const shapes: ShapeDef[] = [
     height: auto;
   }
 
-  .hero-shape svg * {
-    transition: fill 400ms ease;
-  }
-
-  .hero-shapes[data-color-mode='mono'] .hero-shape svg * {
-    fill: var(--color-brick);
-  }
-
   .hero-shape--small {
     width: clamp(3rem, 5vw, 5rem);
   }
@@ -106,9 +98,6 @@ const shapes: ShapeDef[] = [
     .hero-shape {
       will-change: auto;
     }
-    .hero-shape svg * {
-      transition: none;
-    }
   }
 </style>
 
@@ -116,12 +105,8 @@ const shapes: ShapeDef[] = [
   import { gsap } from 'gsap';
   import { variants, type VariantId, type Cursor } from '~/lib/hero-shapes';
 
-  type ColorMode = 'color' | 'mono';
-
   const STORAGE_KEY = 'meshkat-shapes-variant';
-  const COLOR_STORAGE_KEY = 'meshkat-shapes-color';
   const VALID: ReadonlyArray<VariantId> = ['A', 'B', 'C'];
-  const VALID_COLORS: ReadonlyArray<ColorMode> = ['color', 'mono'];
 
   const container = document.querySelector<HTMLElement>('[data-hero-shapes]');
   if (container) {
@@ -164,19 +149,6 @@ const shapes: ShapeDef[] = [
       return 'A';
     };
 
-    const readStoredColor = (): ColorMode => {
-      const url = new URL(window.location.href);
-      const param = url.searchParams.get('shapes-color');
-      if (param && VALID_COLORS.includes(param as ColorMode)) return param as ColorMode;
-      try {
-        const stored = localStorage.getItem(COLOR_STORAGE_KEY);
-        if (stored && VALID_COLORS.includes(stored as ColorMode)) return stored as ColorMode;
-      } catch (_) {}
-      return 'color';
-    };
-
-    container.dataset.colorMode = readStoredColor();
-
     let cleanup: (() => void) | null = null;
 
     const apply = (id: VariantId) => {
@@ -207,11 +179,6 @@ const shapes: ShapeDef[] = [
     window.addEventListener('shapes-variant-change', (e) => {
       const detail = (e as CustomEvent<VariantId>).detail;
       if (VALID.includes(detail)) apply(detail);
-    });
-
-    window.addEventListener('shapes-color-change', (e) => {
-      const detail = (e as CustomEvent<ColorMode>).detail;
-      if (VALID_COLORS.includes(detail)) container.dataset.colorMode = detail;
     });
   }
 </script>
