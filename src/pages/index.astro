@@ -1,13 +1,31 @@
 ---
 import Layout from '~/layouts/Layout.astro';
+import Nav from '~/components/Nav.astro';
+import Hero from '~/components/Hero.astro';
+import Manifesto from '~/components/Manifesto.astro';
+import Work from '~/components/Work.astro';
+import Contact from '~/components/Contact.astro';
+import Footer from '~/components/Footer.astro';
+import Reveal from '~/components/Reveal.astro';
 import { site } from '~/content/site';
 ---
 
 <Layout title={`${site.name.en} — ${site.tagline.en}`} description={site.description.en}>
+  <Nav />
   <main id="main">
-    {/* The team will fill in: Nav, Hero with Ignition, Manifesto, Work, Contact, Footer. */}
-    <section class="container-page py-32">
-      <p class="text-lead text-ink-soft">Scaffold ready. Hero ignition coming next.</p>
-    </section>
+    <Hero />
+
+    <Reveal>
+      <Manifesto />
+    </Reveal>
+
+    <Reveal delay={0.05}>
+      <Work />
+    </Reveal>
+
+    <Reveal delay={0.05}>
+      <Contact />
+    </Reveal>
   </main>
+  <Footer />
 </Layout>
