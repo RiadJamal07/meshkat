@@ -92,11 +92,14 @@ const shapes: ShapeDef[] = [
     height: auto;
   }
 
-  .hero-shape svg * {
+  /* set:html injects the svg children outside Astro's scoped styling pass,
+     so the inner fill overrides have to escape scoping with :global() or
+     they silently fail to match. */
+  .hero-shape :global(svg *) {
     transition: fill 400ms ease;
   }
 
-  .hero-shapes[data-color-mode='mono'] .hero-shape svg * {
+  .hero-shapes[data-color-mode='mono'] .hero-shape :global(svg *) {
     fill: var(--color-brick);
   }
 
