@@ -8,62 +8,54 @@ interface Props {
 const { as: Tag = 'div', delay = 0, class: className = '' } = Astro.props;
 ---
 
-<Tag class:list={['reveal', className]} data-reveal data-reveal-delay={delay}>
+<Tag
+  class:list={['reveal', className]}
+  data-reveal
+  style={delay ? `transition-delay: ${delay}s` : undefined}
+>
   <slot />
 </Tag>
 
 <style>
   .reveal {
-    opacity: 0;
-    transform: translate3d(0, 1.25rem, 0);
-    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+    transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+    will-change: transform;
   }
 
-  .reveal[data-reveal-ready='true'] {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
+  :root[data-reveal-js] .reveal:not([data-reveal-ready='true']) {
+    transform: translate3d(0, 1rem, 0);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .reveal {
-      opacity: 1;
       transform: none;
+      transition: none;
     }
   }
 </style>
 
 <script>
-  import { gsap } from 'gsap';
-  import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-  const REVEAL_DURATION = 0.9;
-  const REVEAL_START = 'top 85%';
+  const REVEAL_MARGIN = '0px 0px -12% 0px';
 
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const els = document.querySelectorAll<HTMLElement>('[data-reveal]');
 
-  if (els.length) {
-    if (reduce) {
-      els.forEach((el) => el.setAttribute('data-reveal-ready', 'true'));
-    } else {
-      gsap.registerPlugin(ScrollTrigger);
+  if (els.length && !reduce) {
+    document.documentElement.setAttribute('data-reveal-js', '');
 
-      els.forEach((el) => {
-        const delay = Number(el.dataset.revealDelay ?? 0);
-        gsap.to(el, {
-          opacity: 1,
-          y: 0,
-          duration: REVEAL_DURATION,
-          delay,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: el,
-            start: REVEAL_START,
-            once: true,
-          },
-          onStart: () => el.setAttribute('data-reveal-ready', 'true'),
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.setAttribute('data-reveal-ready', 'true');
+            io.unobserve(entry.target);
+          }
         });
-      });
-    }
+      },
+      { rootMargin: REVEAL_MARGIN },
+    );
+
+    els.forEach((el) => io.observe(el));
   }
 </script>
