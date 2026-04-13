@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
-import wordmark from '~/assets/brand/ARB-ENG-Logo-light.svg';
+import wordmarkLight from '~/assets/brand/ARB-ENG-Logo-light.svg';
+import wordmarkDark from '~/assets/brand/ARB-ENG-Logo.svg';
 import { site } from '~/content/site';
 ---
 
@@ -13,16 +14,26 @@ import { site } from '~/content/site';
       <span class="hero-eyebrow-ar" lang="ar" dir="rtl">{site.hero.eyebrow.ar}</span>
     </p>
 
-    <Image
-      src={wordmark}
-      alt={`${site.name.en} — ${site.name.ar}`}
-      widths={[480, 768, 960]}
-      sizes="(min-width: 768px) 620px, 80vw"
-      loading="eager"
-      fetchpriority="high"
-      class="hero-mark"
-      data-hero-mark
-    />
+    <div class="hero-mark-wrap" data-hero-mark>
+      <Image
+        src={wordmarkLight}
+        alt={`${site.name.en} — ${site.name.ar}`}
+        widths={[480, 768, 960]}
+        sizes="(min-width: 768px) 620px, 80vw"
+        loading="eager"
+        fetchpriority="high"
+        class="hero-mark hero-mark--dark-theme"
+      />
+      <Image
+        src={wordmarkDark}
+        alt=""
+        widths={[480, 768, 960]}
+        sizes="(min-width: 768px) 620px, 80vw"
+        loading="eager"
+        class="hero-mark hero-mark--light-theme"
+        aria-hidden="true"
+      />
+    </div>
 
     <div class="hero-below">
       <h1 class="hero-headline">
@@ -123,10 +134,38 @@ import { site } from '~/content/site';
     opacity: 0.8;
   }
 
+  .hero-mark-wrap {
+    display: grid;
+    width: min(80vw, 620px);
+    line-height: 0;
+  }
+
   .hero-mark {
     display: block;
-    width: min(80vw, 620px);
+    width: 100%;
     height: auto;
+    grid-area: 1 / 1;
+    transition: opacity 300ms ease;
+  }
+
+  /* Dual-source wordmark: both images occupy the same grid cell so swapping
+     themes is pure opacity — no layout shift, no flash of the wrong colour. */
+  .hero-mark--light-theme {
+    opacity: 0;
+  }
+
+  :root[data-theme='light'] .hero-mark--dark-theme {
+    opacity: 0;
+  }
+
+  :root[data-theme='light'] .hero-mark--light-theme {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-mark {
+      transition: none;
+    }
   }
 
   .hero-below {
