@@ -1,0 +1,323 @@
+---
+import { Image } from 'astro:assets';
+import wordmark from '~/assets/brand/ARB-ENG-Logo-light.svg';
+import { site } from '~/content/site';
+---
+
+<section id="top" class="hero" data-hero>
+  <div class="hero-glow" aria-hidden="true" data-hero-glow></div>
+
+  <div class="hero-inner container-page">
+    <p class="hero-eyebrow">
+      <span>{site.hero.eyebrow.en}</span>
+      <span class="hero-eyebrow-ar" lang="ar" dir="rtl">{site.hero.eyebrow.ar}</span>
+    </p>
+
+    <Image
+      src={wordmark}
+      alt={`${site.name.en} — ${site.name.ar}`}
+      widths={[480, 768, 960]}
+      sizes="(min-width: 768px) 620px, 80vw"
+      loading="eager"
+      fetchpriority="high"
+      class="hero-mark"
+      data-hero-mark
+    />
+
+    <div class="hero-below">
+      <h1 class="hero-headline">
+        <span>{site.hero.headline.en}</span>
+        <span class="hero-headline-ar" lang="ar" dir="rtl">{site.hero.headline.ar}</span>
+      </h1>
+
+      <p class="hero-sub">
+        <span>{site.hero.sub.en}</span>
+        <span class="hero-sub-ar" lang="ar" dir="rtl">{site.hero.sub.ar}</span>
+      </p>
+
+      <a href={site.hero.cta.href} class="hero-cta" data-hero-cta>
+        <span class="hero-cta-label">{site.hero.cta.label.en}</span>
+        <span class="hero-cta-label-ar" lang="ar" dir="rtl">{site.hero.cta.label.ar}</span>
+        <span class="hero-cta-arrow" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d="M4 12L12 4M12 4H6M12 4V10"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+        </span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    isolation: isolate;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    padding-block: clamp(6rem, 12vh, 9rem);
+  }
+
+  .hero-glow {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: clamp(48rem, 110vw, 90rem);
+    aspect-ratio: 1.6 / 1;
+    margin-left: calc(clamp(48rem, 110vw, 90rem) / -2);
+    background: radial-gradient(
+      ellipse at center,
+      rgba(241, 105, 57, 0.55) 0%,
+      rgba(241, 105, 57, 0.22) 28%,
+      rgba(241, 105, 57, 0.06) 55%,
+      transparent 72%
+    );
+    filter: blur(40px);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: -1;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    /* Static fallback — the CSS mirror of the GSAP end-state. If JS fails or
+       reduced-motion is on, the glow is rested at its settled position. */
+    transform: translate3d(0, 18%, 0);
+    opacity: 1;
+  }
+
+  @media (max-width: 640px) {
+    .hero-glow {
+      filter: blur(24px);
+    }
+  }
+
+  .hero-inner {
+    display: grid;
+    gap: clamp(1.75rem, 4vh, 3rem);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--color-ink-soft);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .hero-eyebrow-ar {
+    font-family: var(--font-arabic);
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.8;
+  }
+
+  .hero-mark {
+    display: block;
+    width: min(80vw, 620px);
+    height: auto;
+  }
+
+  .hero-below {
+    display: grid;
+    gap: clamp(1rem, 2vh, 1.5rem);
+    justify-items: center;
+    max-width: 44rem;
+  }
+
+  .hero-headline {
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    line-height: 1.1;
+    color: var(--color-ink);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+
+  .hero-headline span {
+    display: block;
+  }
+
+  .hero-headline-ar {
+    font-family: var(--font-arabic);
+    font-weight: 500;
+    margin-top: 0.25rem;
+    color: var(--color-ink-soft);
+  }
+
+  .hero-sub {
+    font-size: var(--text-lead);
+    line-height: 1.5;
+    color: var(--color-ink-soft);
+  }
+
+  .hero-sub span {
+    display: block;
+  }
+
+  .hero-sub-ar {
+    font-family: var(--font-arabic);
+    margin-top: 0.4rem;
+    opacity: 0.8;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.95rem 1.6rem 0.95rem 1.75rem;
+    background: var(--color-brick);
+    color: var(--color-surface);
+    border-radius: 9999px;
+    text-decoration: none;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition:
+      background-color 240ms ease,
+      transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
+  .hero-cta:hover {
+    background: var(--color-brick-deep);
+  }
+
+  .hero-cta-label-ar {
+    font-family: var(--font-arabic);
+    font-size: 0.875rem;
+    padding-inline-start: 0.5rem;
+    border-inline-start: 1px solid color-mix(in oklab, var(--color-surface) 30%, transparent);
+    opacity: 0.85;
+  }
+
+  .hero-cta-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--color-surface) 20%, transparent);
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .hero-cta-arrow svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .hero-cta:hover .hero-cta-arrow {
+    transform: rotate(45deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-cta,
+    .hero-cta-arrow {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  const SESSION_KEY = 'meshkat-ignited';
+  const GLOW_RISE_Y_START = '55%';
+  const GLOW_RISE_Y_END = '18%';
+  const GLOW_RISE_DURATION = 1.4;
+  const GLOW_RISE_DELAY = 0.15;
+  const BREATH_DURATION = 3.5;
+  const BREATH_SCALE = 1.06;
+  const BREATH_OPACITY = 0.94;
+  const MAGNETIC_STRENGTH = 0.28;
+  const MAGNETIC_MOVE = 0.35;
+  const MAGNETIC_RETURN = 0.55;
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const glow = document.querySelector<HTMLElement>('[data-hero-glow]');
+  const mark = document.querySelector<HTMLElement>('[data-hero-mark]');
+  const cta = document.querySelector<HTMLElement>('[data-hero-cta]');
+
+  if (glow && mark) {
+    let seenThisSession = false;
+    try {
+      seenThisSession = sessionStorage.getItem(SESSION_KEY) === '1';
+    } catch (_) {}
+
+    if (reduce || seenThisSession) {
+      gsap.set(glow, { y: GLOW_RISE_Y_END, opacity: 1, scale: 1 });
+      gsap.set(mark, { opacity: 1 });
+    } else {
+      gsap.set(glow, {
+        y: GLOW_RISE_Y_START,
+        opacity: 0,
+        scale: 0.98,
+        willChange: 'transform, opacity',
+      });
+      gsap.set(mark, { opacity: 0 });
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          try {
+            sessionStorage.setItem(SESSION_KEY, '1');
+          } catch (_) {}
+          gsap.to(glow, {
+            scale: BREATH_SCALE,
+            opacity: BREATH_OPACITY,
+            duration: BREATH_DURATION,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+          });
+        },
+      });
+      tl.to(mark, { opacity: 1, duration: 0.3, ease: 'power1.out' }, 0).to(
+        glow,
+        {
+          y: GLOW_RISE_Y_END,
+          opacity: 1,
+          scale: 1,
+          duration: GLOW_RISE_DURATION,
+          ease: 'power3.out',
+        },
+        GLOW_RISE_DELAY,
+      );
+    }
+  }
+
+  if (cta && !reduce) {
+    const quickX = gsap.quickTo(cta, 'x', { duration: MAGNETIC_MOVE, ease: 'power3.out' });
+    const quickY = gsap.quickTo(cta, 'y', { duration: MAGNETIC_MOVE, ease: 'power3.out' });
+
+    cta.addEventListener('mousemove', (e) => {
+      const rect = cta.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      quickX(x * MAGNETIC_STRENGTH);
+      quickY(y * MAGNETIC_STRENGTH);
+    });
+
+    cta.addEventListener('mouseleave', () => {
+      gsap.to(cta, {
+        x: 0,
+        y: 0,
+        duration: MAGNETIC_RETURN,
+        ease: 'elastic.out(1, 0.4)',
+      });
+    });
+  }
+</script>
