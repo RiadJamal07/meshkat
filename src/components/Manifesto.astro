@@ -1,0 +1,259 @@
+---
+import { site } from '~/content/site';
+---
+
+<section id="manifesto" class="manifesto container-page" data-manifesto>
+  <header class="manifesto-head">
+    <h2 class="manifesto-title">
+      <span>{site.manifesto.title.en}</span>
+      <span class="manifesto-title-ar" lang="ar" dir="rtl">{site.manifesto.title.ar}</span>
+    </h2>
+  </header>
+
+  <div class="manifesto-body">
+    {site.manifesto.body.map((para) => (
+      <>
+        <p class="manifesto-para" data-manifesto-en>{para.en}</p>
+        <p class="manifesto-para manifesto-para-ar" lang="ar" dir="rtl" data-manifesto-ar>
+          {para.ar}
+        </p>
+      </>
+    ))}
+  </div>
+</section>
+
+<style>
+  .manifesto {
+    padding-block: clamp(6rem, 12vh, 10rem);
+  }
+
+  .manifesto-head {
+    margin-bottom: clamp(3rem, 6vh, 4.5rem);
+  }
+
+  .manifesto-title {
+    font-family: var(--font-display);
+    font-size: var(--text-h1);
+    font-weight: 400;
+    line-height: 1.05;
+    color: var(--color-ink);
+    margin: 0;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .manifesto-title-ar {
+    font-family: var(--font-arabic);
+    font-weight: 500;
+    color: var(--color-ink-soft);
+  }
+
+  .manifesto-body {
+    max-width: 42rem;
+    display: grid;
+    gap: 2rem;
+  }
+
+  .manifesto-para {
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    line-height: 1.55;
+    color: var(--color-ink);
+    font-variation-settings: 'wght' 350;
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  .manifesto-para-ar {
+    font-family: var(--font-arabic);
+    color: var(--color-ink-soft);
+    font-weight: 400;
+  }
+
+  .manifesto-body :global(.mf-glyph),
+  .manifesto-body :global(.mf-word) {
+    display: inline-block;
+    transition: font-variation-settings 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: font-variation-settings;
+  }
+
+  .manifesto-body :global(.mf-glyph) {
+    font-variation-settings: 'wght' 350;
+  }
+
+  .manifesto-body :global(.mf-space) {
+    display: inline-block;
+    width: 0.28em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .manifesto-body :global(.mf-glyph),
+    .manifesto-body :global(.mf-word) {
+      transition: none;
+      font-variation-settings: 'wght' 400;
+    }
+  }
+</style>
+
+<script>
+  /* Reading by lamplight:
+   *
+   * On the Latin paragraphs we split by glyph so each letter can lerp its
+   * font-variation-settings 'wght' axis based on distance to the cursor.
+   * Fraunces exposes a 100–900 wght axis; we ride 350 → 600 across a 140px
+   * radius so the effect reads as a gentle thickening under a held light,
+   * not a weight pump.
+   *
+   * WHY Arabic is split by word, not by glyph: Arabic is a connected script,
+   * and wrapping each character in its own inline-block element breaks the
+   * cursive joining rules the shaping engine relies on — the letters
+   * visibly detach. Splitting by word keeps each word's shaping intact
+   * while still giving us a spatial weight response.
+   */
+
+  const MIN_WEIGHT = 350;
+  const MAX_WEIGHT = 600;
+  const INFLUENCE_RADIUS = 140;
+  const INFLUENCE_RADIUS_SQ = INFLUENCE_RADIUS * INFLUENCE_RADIUS;
+
+  type Target = {
+    el: HTMLElement;
+    cx: number;
+    cy: number;
+    current: number;
+  };
+
+  const section = document.querySelector<HTMLElement>('[data-manifesto]');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (section && !reduce) {
+    const enParas = section.querySelectorAll<HTMLElement>('[data-manifesto-en]');
+    const arParas = section.querySelectorAll<HTMLElement>('[data-manifesto-ar]');
+
+    const splitByGlyph = (el: HTMLElement) => {
+      const text = el.textContent ?? '';
+      const frag = document.createDocumentFragment();
+      for (const ch of text) {
+        if (ch === ' ') {
+          const s = document.createElement('span');
+          s.className = 'mf-space';
+          s.textContent = ' ';
+          frag.appendChild(s);
+        } else {
+          const s = document.createElement('span');
+          s.className = 'mf-glyph';
+          s.textContent = ch;
+          frag.appendChild(s);
+        }
+      }
+      el.replaceChildren(frag);
+    };
+
+    const splitByWord = (el: HTMLElement) => {
+      const text = el.textContent ?? '';
+      const frag = document.createDocumentFragment();
+      const parts = text.split(/(\s+)/);
+      for (const part of parts) {
+        if (part.length === 0) continue;
+        if (/^\s+$/.test(part)) {
+          frag.appendChild(document.createTextNode(part));
+        } else {
+          const s = document.createElement('span');
+          s.className = 'mf-word';
+          s.textContent = part;
+          frag.appendChild(s);
+        }
+      }
+      el.replaceChildren(frag);
+    };
+
+    enParas.forEach(splitByGlyph);
+    arParas.forEach(splitByWord);
+
+    let targets: Target[] = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let rafPending = false;
+    let listening = false;
+
+    const measure = () => {
+      const nodes = section.querySelectorAll<HTMLElement>('.mf-glyph, .mf-word');
+      targets = Array.from(nodes).map((el) => {
+        const rect = el.getBoundingClientRect();
+        return {
+          el,
+          cx: rect.left + rect.width / 2,
+          cy: rect.top + rect.height / 2,
+          current: MIN_WEIGHT,
+        };
+      });
+    };
+
+    const tick = () => {
+      rafPending = false;
+      for (const t of targets) {
+        const dx = mouseX - t.cx;
+        const dy = mouseY - t.cy;
+        const distSq = dx * dx + dy * dy;
+        let target = MIN_WEIGHT;
+        if (distSq < INFLUENCE_RADIUS_SQ) {
+          const falloff = 1 - Math.sqrt(distSq) / INFLUENCE_RADIUS;
+          target = MIN_WEIGHT + (MAX_WEIGHT - MIN_WEIGHT) * falloff;
+        }
+        if (Math.abs(target - t.current) > 0.5) {
+          t.current = target;
+          t.el.style.fontVariationSettings = `'wght' ${target.toFixed(0)}`;
+        }
+      }
+    };
+
+    const schedule = () => {
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(tick);
+      }
+    };
+
+    const onMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      schedule();
+    };
+
+    const onResize = () => {
+      measure();
+      schedule();
+    };
+
+    const attach = () => {
+      if (listening) return;
+      listening = true;
+      measure();
+      window.addEventListener('mousemove', onMove, { passive: true });
+      window.addEventListener('scroll', schedule, { passive: true });
+      window.addEventListener('resize', onResize);
+    };
+
+    const detach = () => {
+      if (!listening) return;
+      listening = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', onResize);
+      mouseX = -9999;
+      mouseY = -9999;
+      schedule();
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) attach();
+          else detach();
+        }
+      },
+      { rootMargin: '120px 0px' },
+    );
+    io.observe(section);
+  }
+</script>
