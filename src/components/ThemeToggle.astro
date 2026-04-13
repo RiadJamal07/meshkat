@@ -1,0 +1,109 @@
+---
+interface Props {
+  labelEn?: string;
+  labelAr?: string;
+}
+
+const { labelEn = 'Toggle theme', labelAr = 'تبديل المظهر' } = Astro.props;
+---
+
+<button
+  type="button"
+  class="theme-toggle"
+  aria-label={`${labelEn} · ${labelAr}`}
+  data-theme-toggle
+>
+  <svg
+    class="icon icon-sun"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2"></path>
+    <path d="M12 20v2"></path>
+    <path d="m4.93 4.93 1.41 1.41"></path>
+    <path d="m17.66 17.66 1.41 1.41"></path>
+    <path d="M2 12h2"></path>
+    <path d="M20 12h2"></path>
+    <path d="m6.34 17.66-1.41 1.41"></path>
+    <path d="m19.07 4.93-1.41 1.41"></path>
+  </svg>
+  <svg
+    class="icon icon-moon"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+  </svg>
+</button>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 20%, transparent);
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease;
+  }
+
+  .theme-toggle:hover {
+    background: color-mix(in oklab, var(--color-brick) 12%, transparent);
+    border-color: var(--color-brick);
+    color: var(--color-brick);
+  }
+
+  .icon {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  /* Dark is the default — show moon, hide sun. */
+  .icon-sun {
+    display: none;
+  }
+  .icon-moon {
+    display: block;
+  }
+
+  :root[data-theme='light'] .icon-sun {
+    display: block;
+  }
+  :root[data-theme='light'] .icon-moon {
+    display: none;
+  }
+</style>
+
+<script>
+  const STORAGE_KEY = 'meshkat-theme';
+
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try {
+        localStorage.setItem(STORAGE_KEY, next);
+      } catch (_) {}
+    });
+  });
+</script>
