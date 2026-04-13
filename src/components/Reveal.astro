@@ -5,7 +5,7 @@ interface Props {
   class?: string;
 }
 
-const { as: Tag = 'div', delay = 0, class: className = '' } = Astro.props as Props;
+const { as: Tag = 'div', delay = 0, class: className = '' } = Astro.props;
 ---
 
 <Tag class:list={['reveal', className]} data-reveal data-reveal-delay={delay}>
