@@ -1,5 +1,12 @@
 import type { ImageMetadata } from 'astro';
 
+import andalusianPinkQuran from '~/assets/work/andalusian-pink-quran.jpg';
+import damascusIncenseBurner from '~/assets/work/damascus-incense-burner.jpg';
+import iznikSazTile from '~/assets/work/iznik-saz-tile.jpg';
+import mamlukQuranFolio from '~/assets/work/mamluk-quran-folio.jpg';
+import persianBindingFlap from '~/assets/work/persian-binding-flap.jpg';
+import qajarSiyahMashq from '~/assets/work/qajar-siyah-mashq.jpg';
+
 export type Bilingual = {
   en: string;
   ar: string;
@@ -122,7 +129,122 @@ export const site: Site = {
       en: 'Influences, studies, and work in progress — shown as a curation until the commissioned archive lands.',
       ar: 'تأثيرات، دراسات، وأعمال قيد التنفيذ — معروضة كتنسيق حتى يكتمل أرشيف الأعمال المُكلَّفة.',
     },
-    items: [],
+    items: [
+      {
+        id: 'mamluk-quran-folio',
+        title: {
+          en: 'Folio from a Mamluk Qur\u2019an',
+          ar: 'صفحة من مصحف مملوكيّ',
+        },
+        client: { en: 'Reference', ar: 'مرجع' },
+        discipline: {
+          en: 'Manuscript folio \u00b7 naskhi inside cloud-bands',
+          ar: 'صفحة مخطوط \u00b7 خطّ النسخ داخل سُحُب مزخرفة',
+        },
+        year: '14th c.',
+        image: mamlukQuranFolio,
+        credit: {
+          source: 'The Metropolitan Museum of Art \u2014 1975.29.1',
+          url: 'https://www.metmuseum.org/art/collection/search/452704',
+          license: 'CC0',
+        },
+      },
+      {
+        id: 'andalusian-pink-quran',
+        title: {
+          en: 'Bifolium from the Andalusian Pink Qur\u2019an',
+          ar: 'صفحتان من المصحف الأندلسيّ الورديّ',
+        },
+        client: { en: 'Reference', ar: 'مرجع' },
+        discipline: {
+          en: 'Manuscript bifolium \u00b7 maghribi script on pink paper',
+          ar: 'ورقة مزدوجة \u00b7 الخطّ المغربيّ على ورق ورديّ',
+        },
+        year: '13th c.',
+        image: andalusianPinkQuran,
+        credit: {
+          source: 'The Metropolitan Museum of Art',
+          url: 'https://www.metmuseum.org/art/collection/search/751641',
+          license: 'CC0',
+        },
+      },
+      {
+        id: 'iznik-saz-tile',
+        title: {
+          en: 'Border tiles with saz-leaf design',
+          ar: 'بلاطات إزنيك بنقش ورق الساز',
+        },
+        client: { en: 'Reference', ar: 'مرجع' },
+        discipline: {
+          en: 'Iznik tile panel \u00b7 polychrome underglaze',
+          ar: 'نقش قاشانيّ من إزنيك \u00b7 تلوين تحت الطلاء',
+        },
+        year: '16th c.',
+        image: iznikSazTile,
+        credit: {
+          source: 'The Metropolitan Museum of Art \u2014 1997.307a, b',
+          url: 'https://www.metmuseum.org/art/collection/search/453400',
+          license: 'CC0',
+        },
+      },
+      {
+        id: 'damascus-incense-burner',
+        title: {
+          en: 'Inlaid brass incense burner',
+          ar: 'مِبخَرة نحاسيّة مُطعَّمة',
+        },
+        client: { en: 'Reference', ar: 'مرجع' },
+        discipline: {
+          en: 'Metalwork \u00b7 brass inlaid with silver and gold',
+          ar: 'مشغولات معدنيّة \u00b7 نحاس مطعَّم بالفضّة والذهب',
+        },
+        year: 'late 13th c.',
+        image: damascusIncenseBurner,
+        credit: {
+          source: 'The Metropolitan Museum of Art',
+          url: 'https://www.metmuseum.org/art/collection/search/447008',
+          license: 'CC0',
+        },
+      },
+      {
+        id: 'persian-binding-flap',
+        title: {
+          en: 'Flap of a Persian bookbinding',
+          ar: 'لسان تجليد فارسيّ',
+        },
+        client: { en: 'Reference', ar: 'مرجع' },
+        discipline: {
+          en: 'Bookbinding \u00b7 painted, gilded, and lacquered leather',
+          ar: 'تجليد \u00b7 جلد ملوّن ومُذهَّب ومُلكَّر',
+        },
+        year: '16th c.',
+        image: persianBindingFlap,
+        credit: {
+          source: 'The Metropolitan Museum of Art \u2014 64.190',
+          url: 'https://www.metmuseum.org/art/collection/search/451754',
+          license: 'CC0',
+        },
+      },
+      {
+        id: 'qajar-siyah-mashq',
+        title: {
+          en: 'Album page \u2014 siyah mashq',
+          ar: 'صفحة ألبوم \u2014 سياه مشق',
+        },
+        client: { en: 'Reference', ar: 'مرجع' },
+        discipline: {
+          en: 'Calligraphy exercise \u00b7 nasta\u2019liq in ink and gold',
+          ar: 'تمرين خطّيّ \u00b7 النستعليق بالحبر والذهب',
+        },
+        year: '1844',
+        image: qajarSiyahMashq,
+        credit: {
+          source: 'The Metropolitan Museum of Art \u2014 2016.535',
+          url: 'https://www.metmuseum.org/art/collection/search/716305',
+          license: 'CC0',
+        },
+      },
+    ],
   },
   contact: {
     title: {
