@@ -1,0 +1,261 @@
+---
+import { site } from '~/content/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer" data-footer>
+  <div class="footer-inner container-page">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <svg
+          class="footer-mark"
+          viewBox="0 0 48 48"
+          fill="none"
+          aria-hidden="true"
+        >
+          <!-- Eight-point star: two squares rotated 45° — a classic Islamic geometric unit. -->
+          <rect
+            x="10"
+            y="10"
+            width="28"
+            height="28"
+            fill="currentColor"
+            opacity="0.9"></rect>
+          <rect
+            x="10"
+            y="10"
+            width="28"
+            height="28"
+            fill="currentColor"
+            opacity="0.9"
+            transform="rotate(45 24 24)"></rect>
+        </svg>
+
+        <div class="footer-brand-text">
+          <p class="footer-brand-name">
+            <span>{site.name.en}</span>
+            <span class="footer-brand-name-ar" lang="ar" dir="rtl">{site.name.ar}</span>
+          </p>
+          <p class="footer-brand-note">
+            <span>{site.footer.note.en}</span>
+            <span class="footer-brand-note-ar" lang="ar" dir="rtl">{site.footer.note.ar}</span>
+          </p>
+        </div>
+      </div>
+
+      <nav class="footer-nav" aria-label="Footer">
+        <ul>
+          {site.nav.map((link) => (
+            <li>
+              <a href={link.href}>
+                <span>{link.label.en}</span>
+                <span class="footer-nav-ar" lang="ar" dir="rtl">{link.label.ar}</span>
+              </a>
+            </li>
+          ))}
+          <li>
+            <a href={`mailto:${site.contact.email}`}>
+              <span>Email</span>
+              <span class="footer-nav-ar" lang="ar" dir="rtl">البريد</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-rule" aria-hidden="true">
+      <svg viewBox="0 0 120 8" preserveAspectRatio="none">
+        <path
+          d="M0 4 L56 4 M64 4 L120 4"
+          stroke="currentColor"
+          stroke-width="1"
+          opacity="0.35"></path>
+        <g transform="translate(60 4)" fill="currentColor" opacity="0.7">
+          <rect x="-3" y="-3" width="6" height="6" transform="rotate(45)"></rect>
+        </g>
+      </svg>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-copy">© {year} {site.name.en} · {site.name.ar}</p>
+
+      <div class="footer-motifs" aria-hidden="true">
+        <svg class="footer-motif" viewBox="0 0 32 32" fill="none">
+          <!-- Crescent -->
+          <path
+            d="M22 8 A10 10 0 1 0 22 24 A8 8 0 1 1 22 8 Z"
+            fill="currentColor"
+            opacity="0.45"></path>
+        </svg>
+        <svg class="footer-motif" viewBox="0 0 32 32" fill="none">
+          <!-- Diamond cluster -->
+          <rect x="14" y="4" width="4" height="4" transform="rotate(45 16 6)" fill="currentColor" opacity="0.5"></rect>
+          <rect x="14" y="14" width="4" height="4" transform="rotate(45 16 16)" fill="currentColor" opacity="0.7"></rect>
+          <rect x="14" y="24" width="4" height="4" transform="rotate(45 16 26)" fill="currentColor" opacity="0.5"></rect>
+        </svg>
+        <svg class="footer-motif" viewBox="0 0 32 32" fill="none">
+          <!-- Small eight-point -->
+          <rect x="8" y="8" width="16" height="16" fill="currentColor" opacity="0.4"></rect>
+          <rect x="8" y="8" width="16" height="16" fill="currentColor" opacity="0.4" transform="rotate(45 16 16)"></rect>
+        </svg>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--color-surface);
+    color: var(--color-on-surface);
+    position: relative;
+    isolation: isolate;
+    border-top: 1px solid color-mix(in oklab, var(--color-on-surface) 10%, transparent);
+  }
+
+  .footer-inner {
+    padding-block: clamp(3rem, 6vh, 5rem);
+    display: grid;
+    gap: clamp(2rem, 4vh, 3rem);
+  }
+
+  .footer-top {
+    display: grid;
+    gap: clamp(2rem, 4vh, 3rem);
+  }
+
+  @media (min-width: 720px) {
+    .footer-top {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .footer-brand {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .footer-mark {
+    width: 2.25rem;
+    height: 2.25rem;
+    color: var(--color-brick);
+    flex: 0 0 auto;
+    margin-top: 0.2rem;
+  }
+
+  .footer-brand-text {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .footer-brand-name {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.05;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+  }
+
+  .footer-brand-name-ar {
+    font-family: var(--font-arabic);
+    font-size: 1.125rem;
+    color: color-mix(in oklab, var(--color-on-surface) 70%, transparent);
+  }
+
+  .footer-brand-note {
+    margin: 0;
+    color: color-mix(in oklab, var(--color-on-surface) 70%, transparent);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .footer-brand-note-ar {
+    font-family: var(--font-arabic);
+    font-size: 0.8125rem;
+    opacity: 0.85;
+  }
+
+  .footer-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem 1.5rem;
+  }
+
+  .footer-nav a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    color: color-mix(in oklab, var(--color-on-surface) 75%, transparent);
+    text-decoration: none;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 220ms ease;
+  }
+
+  .footer-nav a:hover,
+  .footer-nav a:focus-visible {
+    color: var(--color-brick);
+  }
+
+  .footer-nav-ar {
+    font-family: var(--font-arabic);
+    font-size: 0.6875rem;
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.75;
+  }
+
+  .footer-rule {
+    color: color-mix(in oklab, var(--color-on-surface) 60%, transparent);
+    height: 0.5rem;
+  }
+
+  .footer-rule svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .footer-bottom {
+    display: grid;
+    gap: 1.25rem;
+    align-items: center;
+  }
+
+  @media (min-width: 720px) {
+    .footer-bottom {
+      grid-template-columns: 1fr auto;
+    }
+  }
+
+  .footer-copy {
+    margin: 0;
+    color: color-mix(in oklab, var(--color-on-surface) 55%, transparent);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+  }
+
+  .footer-motifs {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.25rem;
+    color: var(--color-brick);
+  }
+
+  .footer-motif {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+  }
+</style>
