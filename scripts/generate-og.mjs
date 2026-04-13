@@ -10,7 +10,6 @@
  */
 
 import sharp from 'sharp';
-import { writeFileSync } from 'node:fs';
 
 const WIDTH = 1200;
 const HEIGHT = 630;
