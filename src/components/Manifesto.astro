@@ -74,6 +74,10 @@ import { site } from '~/content/site';
   .manifesto-body :global(.mf-word) {
     display: inline-block;
     transition: font-variation-settings 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .manifesto[data-mf-active='true'] :global(.mf-glyph),
+  .manifesto[data-mf-active='true'] :global(.mf-word) {
     will-change: font-variation-settings;
   }
 
@@ -230,6 +234,7 @@ import { site } from '~/content/site';
     const attach = () => {
       if (listening) return;
       listening = true;
+      section.setAttribute('data-mf-active', 'true');
       measure();
       window.addEventListener('mousemove', onMove, { passive: true });
       window.addEventListener('resize', onResize);
@@ -238,6 +243,7 @@ import { site } from '~/content/site';
     const detach = () => {
       if (!listening) return;
       listening = false;
+      section.removeAttribute('data-mf-active');
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('resize', onResize);
       mouseX = -9999;
