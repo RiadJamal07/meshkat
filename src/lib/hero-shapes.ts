@@ -117,6 +117,15 @@ const sampleRandomSafePosition = (width: number, height: number) => {
   return { x: Math.random() * width * 0.3, y: Math.random() * height * 0.6 };
 };
 
+/* The hero element is `min-height: 100svh` but its actual height can
+ * exceed the viewport on taller screens where the inner content spills
+ * beyond the fold. Variant B/C simulate in a bounded rectangle — we want
+ * that rectangle to match whatever portion of the hero is actually
+ * on-screen so shapes never spawn below the fold and "disappear". */
+const effectiveSimulationHeight = (containerRect: DOMRect) => {
+  return Math.min(containerRect.height, window.innerHeight);
+};
+
 export const variantWander: VariantFn = (shapes, getCursor, container) => {
   // Target drift is rotation-based, not additive, so shapes keep their
   // speed while continuously changing heading. A mild speed floor makes
@@ -140,7 +149,10 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
     };
   });
 
-  const positions = shapes.map(() => sampleRandomSafePosition(rect0.width, rect0.height));
+  const initialSimHeight = effectiveSimulationHeight(rect0);
+  const positions = shapes.map(() =>
+    sampleRandomSafePosition(rect0.width, initialSimHeight),
+  );
   const velocities = shapes.map(() => {
     const angle = Math.random() * Math.PI * 2;
     return { x: Math.cos(angle) * TARGET_SPEED, y: Math.sin(angle) * TARGET_SPEED };
@@ -156,7 +168,7 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
     const cursor = getCursor();
     const rect = container.getBoundingClientRect();
     const width = rect.width;
-    const height = rect.height;
+    const height = effectiveSimulationHeight(rect);
     const wordmarkL = width * WORDMARK_COL_START;
     const wordmarkR = width * WORDMARK_COL_END;
     const wordmarkCx = (wordmarkL + wordmarkR) / 2;
