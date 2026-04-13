@@ -14,7 +14,6 @@ const year = new Date().getFullYear();
           fill="none"
           aria-hidden="true"
         >
-          <!-- Eight-point star: two squares rotated 45° — a classic Islamic geometric unit. -->
           <rect
             x="10"
             y="10"
@@ -257,5 +256,11 @@ const year = new Date().getFullYear();
     width: 1.25rem;
     height: 1.25rem;
     display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .footer-nav a {
+      transition: none;
+    }
   }
 </style>
