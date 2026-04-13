@@ -42,7 +42,7 @@
   /* ─── Radii + shadows ─── */
   --radius-card: 1.25rem;
   --shadow-soft: 0 1px 2px rgba(15, 13, 10, 0.2), 0 8px 24px -8px rgba(15, 13, 10, 0.35);
-  --shadow-glow: 0 0 120px 24px rgba(241, 105, 57, 0.28);
+  --shadow-glow: 0 0 120px 24px color-mix(in oklab, var(--color-brick) 28%, transparent);
 }
 
 /* Light theme — opt-in via toggle. Cream and ink flip values. */

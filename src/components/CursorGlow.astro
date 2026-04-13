@@ -23,9 +23,9 @@
     mix-blend-mode: screen;
     background: radial-gradient(
       circle at center,
-      rgba(241, 105, 57, 0.45) 0%,
-      rgba(241, 105, 57, 0.22) 28%,
-      rgba(241, 105, 57, 0.06) 55%,
+      color-mix(in oklab, var(--color-brick) 45%, transparent) 0%,
+      color-mix(in oklab, var(--color-brick) 22%, transparent) 28%,
+      color-mix(in oklab, var(--color-brick) 6%, transparent) 55%,
       transparent 75%
     );
     filter: blur(16px);
