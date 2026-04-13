@@ -1,0 +1,179 @@
+---
+import diamondSvg from '~/assets/brand/shapes/Meshkat-Shapes-Diamond.svg?raw';
+import circleSvg from '~/assets/brand/shapes/Meshkat-Shapes-Circle.svg?raw';
+import square2Svg from '~/assets/brand/shapes/Meshkat-Shapes-square2.svg?raw';
+import halfCircleSvg from '~/assets/brand/shapes/Meshkat-Shapes-HalfCircle.svg?raw';
+import dotsSvg from '~/assets/brand/shapes/Meshkat-Shapes-Dots.svg?raw';
+
+interface ShapeDef {
+  id: string;
+  svg: string;
+  x: number;
+  y: number;
+  size: 'small' | 'medium';
+  opacity: number;
+  mobile: boolean;
+}
+
+const shapes: ShapeDef[] = [
+  { id: 'diamond',    svg: diamondSvg,    x: 8,  y: 18, size: 'medium', opacity: 0.45, mobile: true  },
+  { id: 'circle',     svg: circleSvg,     x: 82, y: 12, size: 'small',  opacity: 0.40, mobile: false },
+  { id: 'square2',    svg: square2Svg,    x: 88, y: 55, size: 'small',  opacity: 0.40, mobile: false },
+  { id: 'halfcircle', svg: halfCircleSvg, x: 6,  y: 68, size: 'medium', opacity: 0.45, mobile: true  },
+  { id: 'dots',       svg: dotsSvg,       x: 62, y: 90, size: 'small',  opacity: 0.40, mobile: true  },
+];
+---
+
+<div class="hero-shapes" data-hero-shapes aria-hidden="true">
+  {shapes.map((shape) => (
+    <div
+      class:list={[
+        'hero-shape',
+        `hero-shape--${shape.size}`,
+        !shape.mobile && 'hero-shape--desktop-only',
+      ]}
+      data-hero-shape
+      data-shape-id={shape.id}
+      style={`--anchor-x: ${shape.x}%; --anchor-y: ${shape.y}%; --shape-opacity: ${shape.opacity};`}
+      set:html={shape.svg}
+    />
+  ))}
+</div>
+
+<style>
+  .hero-shapes {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .hero-shape {
+    position: absolute;
+    left: var(--anchor-x);
+    top: var(--anchor-y);
+    opacity: var(--shape-opacity);
+    will-change: transform;
+    transform: translate3d(
+      calc(-50% + var(--parallax-x, 0px)),
+      calc(-50% + var(--parallax-y, 0px)),
+      0
+    );
+    backface-visibility: hidden;
+  }
+
+  .hero-shape svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .hero-shape--small {
+    width: clamp(3rem, 5vw, 5rem);
+  }
+
+  .hero-shape--medium {
+    width: clamp(4rem, 7vw, 6.5rem);
+  }
+
+  @media (max-width: 640px) {
+    .hero-shape--desktop-only {
+      display: none;
+    }
+    .hero-shape--small,
+    .hero-shape--medium {
+      width: clamp(2.5rem, 10vw, 4rem);
+    }
+  }
+
+  :global(.hero-shapes-lines) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-shape {
+      will-change: auto;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import { variants, type VariantId, type Cursor } from '~/lib/hero-shapes';
+
+  const STORAGE_KEY = 'meshkat-shapes-variant';
+  const VALID: ReadonlyArray<VariantId> = ['A', 'B', 'C'];
+
+  const container = document.querySelector<HTMLElement>('[data-hero-shapes]');
+  if (container) {
+    const shapes = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-hero-shape]'),
+    );
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+
+    const cursor: Cursor = { x: -9999, y: -9999, active: false };
+
+    const onMove = (e: MouseEvent) => {
+      cursor.x = e.clientX;
+      cursor.y = e.clientY;
+      cursor.active = true;
+    };
+    const onLeave = () => {
+      cursor.active = false;
+    };
+
+    const readStoredVariant = (): VariantId => {
+      const url = new URL(window.location.href);
+      const param = url.searchParams.get('shapes');
+      if (param && VALID.includes(param as VariantId)) return param as VariantId;
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored && VALID.includes(stored as VariantId)) return stored as VariantId;
+      } catch (_) {}
+      return 'A';
+    };
+
+    let cleanup: (() => void) | null = null;
+
+    const apply = (id: VariantId) => {
+      if (cleanup) {
+        cleanup();
+        cleanup = null;
+      }
+      gsap.killTweensOf(shapes);
+      shapes.forEach((shape) => {
+        shape.style.removeProperty('--parallax-x');
+        shape.style.removeProperty('--parallax-y');
+      });
+      gsap.set(shapes, { x: 0, y: 0 });
+
+      if (reduce || coarse) return;
+
+      const fn = variants[id];
+      const visible = shapes.filter(
+        (shape) => getComputedStyle(shape).display !== 'none',
+      );
+      cleanup = fn(visible, () => cursor, container);
+    };
+
+    if (!reduce && !coarse) {
+      window.addEventListener('mousemove', onMove, { passive: true });
+      window.addEventListener('mouseleave', onLeave, { passive: true });
+    }
+
+    apply(readStoredVariant());
+
+    window.addEventListener('shapes-variant-change', (e) => {
+      const detail = (e as CustomEvent<VariantId>).detail;
+      if (VALID.includes(detail)) apply(detail);
+    });
+  }
+</script>

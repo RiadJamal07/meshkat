@@ -3,10 +3,13 @@ import { Image } from 'astro:assets';
 import wordmarkLight from '~/assets/brand/ARB-ENG-Logo-light.svg';
 import wordmarkDark from '~/assets/brand/ARB-ENG-Logo.svg';
 import { site } from '~/content/site';
+import HeroShapes from './HeroShapes.astro';
 ---
 
 <section id="top" class="hero" data-hero>
   <div class="hero-glow" aria-hidden="true" data-hero-glow></div>
+
+  <HeroShapes />
 
   <div class="hero-inner container-page">
     <p class="hero-eyebrow">
@@ -109,6 +112,8 @@ import { site } from '~/content/site';
   }
 
   .hero-inner {
+    position: relative;
+    z-index: 1;
     display: grid;
     gap: clamp(1.75rem, 4vh, 3rem);
     justify-items: center;
