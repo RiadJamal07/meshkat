@@ -34,7 +34,7 @@
     transition: opacity 300ms ease-out;
   }
 
-  @media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  @media (prefers-reduced-motion: reduce), (hover: none) and (pointer: coarse) {
     .cursor-glow {
       display: none;
     }
@@ -49,7 +49,7 @@
   const el = document.querySelector<HTMLElement>('.cursor-glow');
   if (el) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    const coarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
     if (!reduce && !coarse) {
       const xTo = gsap.quickTo(el, 'x', { duration: CURSOR_LAG, ease: 'power3.out' });
