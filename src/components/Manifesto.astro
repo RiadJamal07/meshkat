@@ -177,13 +177,15 @@ import { site } from '~/content/site';
     let listening = false;
 
     const measure = () => {
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
       const nodes = section.querySelectorAll<HTMLElement>('.mf-glyph, .mf-word');
       targets = Array.from(nodes).map((el) => {
         const rect = el.getBoundingClientRect();
         return {
           el,
-          cx: rect.left + rect.width / 2,
-          cy: rect.top + rect.height / 2,
+          cx: rect.left + rect.width / 2 + scrollX,
+          cy: rect.top + rect.height / 2 + scrollY,
           current: MIN_WEIGHT,
         };
       });
@@ -215,8 +217,8 @@ import { site } from '~/content/site';
     };
 
     const onMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+      mouseX = e.pageX;
+      mouseY = e.pageY;
       schedule();
     };
 
@@ -230,7 +232,6 @@ import { site } from '~/content/site';
       listening = true;
       measure();
       window.addEventListener('mousemove', onMove, { passive: true });
-      window.addEventListener('scroll', schedule, { passive: true });
       window.addEventListener('resize', onResize);
     };
 
@@ -238,7 +239,6 @@ import { site } from '~/content/site';
       if (!listening) return;
       listening = false;
       window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', onResize);
       mouseX = -9999;
       mouseY = -9999;
