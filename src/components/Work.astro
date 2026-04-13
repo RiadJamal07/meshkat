@@ -18,7 +18,7 @@ import WorkCard from './WorkCard.astro';
   </header>
 
   <div class="work-grid">
-    {site.work.items.map((item, i) => <WorkCard item={item} index={i} />)}
+    {site.work.items.map((item) => <WorkCard item={item} />)}
   </div>
 </section>
 

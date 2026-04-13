@@ -4,11 +4,9 @@ import type { WorkItem } from '~/content/site';
 
 interface Props {
   item: WorkItem;
-  index: number;
 }
 
-const { item, index } = Astro.props;
-const priority = index < 3;
+const { item } = Astro.props;
 ---
 
 <button
@@ -25,7 +23,7 @@ const priority = index < 3;
         alt={`${item.title.en} — ${item.title.ar}`}
         widths={[480, 768, 1200]}
         sizes="(min-width: 1024px) 32vw, (min-width: 640px) 48vw, 92vw"
-        loading={priority ? 'eager' : 'lazy'}
+        loading="lazy"
         class="work-card-image"
       />
     )}
