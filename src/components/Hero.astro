@@ -253,14 +253,34 @@ import { site } from '~/content/site';
   const cta = document.querySelector<HTMLElement>('[data-hero-cta]');
 
   if (glow && mark) {
+    const startBreath = () => {
+      gsap.to(glow, {
+        scale: BREATH_SCALE,
+        opacity: BREATH_OPACITY,
+        duration: BREATH_DURATION,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+      });
+    };
+
     let seenThisSession = false;
     try {
       seenThisSession = sessionStorage.getItem(SESSION_KEY) === '1';
     } catch (_) {}
 
-    if (reduce || seenThisSession) {
+    if (reduce) {
       gsap.set(glow, { y: GLOW_RISE_Y_END, opacity: 1, scale: 1 });
       gsap.set(mark, { opacity: 1 });
+    } else if (seenThisSession) {
+      gsap.set(glow, {
+        y: GLOW_RISE_Y_END,
+        opacity: 1,
+        scale: 1,
+        willChange: 'transform, opacity',
+      });
+      gsap.set(mark, { opacity: 1 });
+      startBreath();
     } else {
       gsap.set(glow, {
         y: GLOW_RISE_Y_START,
@@ -275,14 +295,7 @@ import { site } from '~/content/site';
           try {
             sessionStorage.setItem(SESSION_KEY, '1');
           } catch (_) {}
-          gsap.to(glow, {
-            scale: BREATH_SCALE,
-            opacity: BREATH_OPACITY,
-            duration: BREATH_DURATION,
-            ease: 'sine.inOut',
-            repeat: -1,
-            yoyo: true,
-          });
+          startBreath();
         },
       });
       tl.to(mark, { opacity: 1, duration: 0.3, ease: 'power1.out' }, 0).to(
