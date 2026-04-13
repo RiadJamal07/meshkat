@@ -6,6 +6,7 @@ export interface Cursor {
   x: number;
   y: number;
   active: boolean;
+  scrollOffset: number;
 }
 
 export type Cleanup = () => void;
@@ -15,6 +16,13 @@ export type VariantFn = (
   getCursor: () => Cursor,
   container: HTMLElement,
 ) => Cleanup;
+
+const readScrollRate = (shape: HTMLElement): number => {
+  const raw = shape.dataset.scrollRate;
+  if (!raw) return 0;
+  const parsed = parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 /* ─── Variant A — Drift
  * Phase-offset Lissajous orbit hand-computed on the ticker. A weighted
@@ -35,6 +43,7 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
     phaseY: (i * 1.1) % (Math.PI * 2),
   }));
   const parallax = shapes.map(() => ({ x: 0, y: 0 }));
+  const scrollRates = shapes.map(readScrollRate);
   const start = performance.now();
 
   const tick = () => {
@@ -45,6 +54,7 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
       const p = params[i];
       const orbitX = Math.sin(t * p.freqX + p.phaseX) * p.ampX;
       const orbitY = Math.sin(t * p.freqY + p.phaseY) * p.ampY;
+      const scrollY = -cursor.scrollOffset * scrollRates[i];
 
       if (!cursor.active) {
         parallax[i].x += (0 - parallax[i].x) * PARALLAX_LERP;
@@ -70,7 +80,7 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
 
       gsap.set(shape, {
         x: orbitX + parallax[i].x,
-        y: orbitY + parallax[i].y,
+        y: orbitY + parallax[i].y + scrollY,
       });
     });
   };
@@ -95,16 +105,18 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
     x: gsap.quickTo(shape, 'x', { duration: 0.32, ease: 'power2.out' }),
     y: gsap.quickTo(shape, 'y', { duration: 0.32, ease: 'power2.out' }),
   }));
+  const scrollRates = shapes.map(readScrollRate);
 
   const tick = () => {
     const cursor = getCursor();
     shapes.forEach((shape, i) => {
+      const scrollY = -cursor.scrollOffset * scrollRates[i];
       const rect = shape.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       if (!cursor.active) {
         quickTos[i].x(0);
-        quickTos[i].y(0);
+        quickTos[i].y(scrollY);
         return;
       }
       const dx = cx - cursor.x;
@@ -112,13 +124,13 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
       const dist = Math.hypot(dx, dy);
       if (dist > REACH || dist === 0) {
         quickTos[i].x(0);
-        quickTos[i].y(0);
+        quickTos[i].y(scrollY);
         return;
       }
       const falloff = (1 - dist / REACH) ** 2;
       const offset = falloff * MAX_DISP;
       quickTos[i].x((dx / dist) * offset);
-      quickTos[i].y((dy / dist) * offset);
+      quickTos[i].y((dy / dist) * offset + scrollY);
     });
   };
 
@@ -144,6 +156,7 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
   const BREATH_AMP = 6;
   const BREATH_FREQ = (2 * Math.PI) / 4;
   const phases = shapes.map((_, i) => (i * 0.9) % 4);
+  const scrollRates = shapes.map(readScrollRate);
   const start = performance.now();
 
   const svgNS = 'http://www.w3.org/2000/svg';
@@ -164,13 +177,14 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
 
   const tick = () => {
     const t = (performance.now() - start) / 1000;
+    const cursor = getCursor();
 
     shapes.forEach((shape, i) => {
-      const y = Math.sin(t * BREATH_FREQ + phases[i]) * BREATH_AMP;
-      gsap.set(shape, { x: 0, y });
+      const breath = Math.sin(t * BREATH_FREQ + phases[i]) * BREATH_AMP;
+      const scrollY = -cursor.scrollOffset * scrollRates[i];
+      gsap.set(shape, { x: 0, y: breath + scrollY });
     });
 
-    const cursor = getCursor();
     if (!cursor.active) {
       lines.forEach((line) => line.setAttribute('opacity', '0'));
       return;
