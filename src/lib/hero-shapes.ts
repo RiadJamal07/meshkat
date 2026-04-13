@@ -217,82 +217,89 @@ export const variantWander: VariantFn = (shapes, getCursor, container) => {
   };
 };
 
-/* ─── Variant C — Constellation
- * Shapes do a slow y-axis breath (±6px, 4s period) with a gentler x-axis
- * sway layered on top (±4px, 5s period, independent phase-offset) so they
- * drift subtly sideways as they breathe, never fully at rest. When the
- * cursor enters the hero, a dedicated SVG overlay draws thin brick lines
- * to the 3 nearest shapes, distance-weighted opacity, fade out past 280px.
- * Breath + sway are hand-computed in the ticker so transforms have a
- * single writer. */
-export const variantConstellation: VariantFn = (shapes, getCursor, container) => {
-  const REACH = 280;
-  const NEAREST_COUNT = 3;
-  const BREATH_AMP = 6;
-  const BREATH_FREQ = (2 * Math.PI) / 4;
-  const SWAY_AMP = 4;
-  const SWAY_FREQ = (2 * Math.PI) / 5;
-  const phases = shapes.map((_, i) => (i * 0.9) % 4);
-  const swayPhases = shapes.map((_, i) => (i * 1.7) % 5);
+/* ─── Variant C — Follow
+ * All shapes lazily swim toward the cursor at staggered per-shape lerp
+ * rates (0.02 "tail" to 0.08 "leader"), creating a trailing school of
+ * fish that follows the pointer. When the cursor is idle (left the
+ * hero, or hasn't moved for more than 500ms) the target becomes a
+ * slowly-rotating orbit around the hero center (radius ~20% viewport
+ * width, 20s period), so shapes keep moving gently instead of locking.
+ * Wordmark column and CTA band are no-fly zones — same radial push
+ * pattern as wander — so the school veers around protected regions. */
+export const variantFollow: VariantFn = (shapes, getCursor, container) => {
+  const ORBIT_PERIOD = 20;
+  const ORBIT_FREQ = (2 * Math.PI) / ORBIT_PERIOD;
+  const IDLE_TIMEOUT_MS = 500;
+  const ZONE_PUSH = 0.35;
+
+  const rect0 = container.getBoundingClientRect();
+  const anchors = shapes.map((shape) => {
+    const r = shape.getBoundingClientRect();
+    return {
+      x: r.left + r.width / 2 - rect0.left,
+      y: r.top + r.height / 2 - rect0.top,
+    };
+  });
+  const positions = anchors.map((a) => ({ x: a.x, y: a.y }));
+  const followSpeeds = shapes.map((_, i) => 0.08 - (i / Math.max(shapes.length - 1, 1)) * 0.06);
   const scrollRates = shapes.map(readScrollRate);
+
+  let lastCursorX = -Infinity;
+  let lastCursorY = -Infinity;
+  let lastMoveAt = -Infinity;
   const start = performance.now();
 
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.classList.add('hero-shapes-lines');
-  svg.setAttribute('aria-hidden', 'true');
-  const lines: SVGLineElement[] = [];
-  for (let i = 0; i < NEAREST_COUNT; i++) {
-    const line = document.createElementNS(svgNS, 'line');
-    line.setAttribute('stroke', 'var(--color-brick)');
-    line.setAttribute('stroke-width', '1');
-    line.setAttribute('stroke-linecap', 'round');
-    line.setAttribute('opacity', '0');
-    svg.appendChild(line);
-    lines.push(line);
-  }
-  container.appendChild(svg);
-
   const tick = () => {
-    const t = (performance.now() - start) / 1000;
+    const now = performance.now();
     const cursor = getCursor();
+    const rect = container.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const wordmarkL = width * WORDMARK_COL_START;
+    const wordmarkR = width * WORDMARK_COL_END;
+    const wordmarkCx = (wordmarkL + wordmarkR) / 2;
+    const ctaTop = height * CTA_BAND_START;
+
+    if (cursor.active && (cursor.x !== lastCursorX || cursor.y !== lastCursorY)) {
+      lastMoveAt = now;
+      lastCursorX = cursor.x;
+      lastCursorY = cursor.y;
+    }
+    const cursorIdle = !cursor.active || now - lastMoveAt > IDLE_TIMEOUT_MS;
+
+    let targetX: number;
+    let targetY: number;
+    if (cursorIdle) {
+      const t = (now - start) / 1000;
+      const orbitRadius = window.innerWidth * 0.2;
+      targetX = width / 2 + Math.cos(t * ORBIT_FREQ) * orbitRadius;
+      targetY = height / 2 + Math.sin(t * ORBIT_FREQ) * orbitRadius;
+    } else {
+      targetX = cursor.x - rect.left;
+      targetY = cursor.y - rect.top;
+    }
 
     shapes.forEach((shape, i) => {
-      const breath = Math.sin(t * BREATH_FREQ + phases[i]) * BREATH_AMP;
-      const sway = Math.sin(t * SWAY_FREQ + swayPhases[i]) * SWAY_AMP;
-      const scrollY = -cursor.scrollOffset * scrollRates[i];
-      gsap.set(shape, { x: sway, y: breath + scrollY });
-    });
+      const pos = positions[i];
+      const speed = followSpeeds[i];
+      pos.x += (targetX - pos.x) * speed;
+      pos.y += (targetY - pos.y) * speed;
 
-    if (!cursor.active) {
-      lines.forEach((line) => line.setAttribute('opacity', '0'));
-      return;
-    }
-    const rect = container.getBoundingClientRect();
-    const cxLocal = cursor.x - rect.left;
-    const cyLocal = cursor.y - rect.top;
-    const ranked = shapes
-      .map((shape) => {
-        const r = shape.getBoundingClientRect();
-        const sx = r.left + r.width / 2 - rect.left;
-        const sy = r.top + r.height / 2 - rect.top;
-        const dist = Math.hypot(sx - cxLocal, sy - cyLocal);
-        return { sx, sy, dist };
-      })
-      .sort((a, b) => a.dist - b.dist)
-      .slice(0, NEAREST_COUNT);
-    ranked.forEach((node, i) => {
-      const line = lines[i];
-      if (node.dist > REACH) {
-        line.setAttribute('opacity', '0');
-        return;
+      if (pos.x > wordmarkL && pos.x < wordmarkR) {
+        const depth = 1 - Math.abs(pos.x - wordmarkCx) / ((wordmarkR - wordmarkL) / 2);
+        const dir = pos.x < wordmarkCx ? -1 : 1;
+        pos.x += dir * depth * (wordmarkR - wordmarkL) * ZONE_PUSH * speed;
       }
-      const opacity = (1 - node.dist / REACH) * 0.75;
-      line.setAttribute('x1', `${cxLocal}`);
-      line.setAttribute('y1', `${cyLocal}`);
-      line.setAttribute('x2', `${node.sx}`);
-      line.setAttribute('y2', `${node.sy}`);
-      line.setAttribute('opacity', `${opacity}`);
+      if (pos.y > ctaTop) {
+        const depth = (pos.y - ctaTop) / (height - ctaTop + 1);
+        pos.y -= (0.5 + depth) * (height - ctaTop) * ZONE_PUSH * speed;
+      }
+
+      const scrollY = -cursor.scrollOffset * scrollRates[i];
+      gsap.set(shape, {
+        x: pos.x - anchors[i].x,
+        y: pos.y - anchors[i].y + scrollY,
+      });
     });
   };
 
@@ -300,7 +307,6 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
 
   return () => {
     gsap.ticker.remove(tick);
-    svg.remove();
     gsap.set(shapes, { x: 0, y: 0 });
   };
 };
@@ -308,5 +314,5 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
 export const variants: Record<VariantId, VariantFn> = {
   A: variantDrift,
   B: variantWander,
-  C: variantConstellation,
+  C: variantFollow,
 };
