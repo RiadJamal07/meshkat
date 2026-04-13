@@ -5,6 +5,31 @@ import square2Svg from '~/assets/brand/shapes/Meshkat-Shapes-square2.svg?raw';
 import squareSvg from '~/assets/brand/shapes/Meshkat-Shapes-Square.svg?raw';
 import dotsSvg from '~/assets/brand/shapes/Meshkat-Shapes-Dots.svg?raw';
 
+// Every Illustrator-exported SVG in this set declares fills via `.cls-1`
+// inside a `<defs><style>` block. When multiple are inlined with set:html
+// into the same DOM, their style blocks become page-level stylesheets and
+// the class names collide — last-declared `.cls-1` wins, tinting every
+// other shape that happens to share the same class. Bake the fill onto
+// the element as a presentation attribute and drop the defs so each SVG
+// is self-contained and can't leak into its siblings.
+const inlineFills = (svg: string): string => {
+  const rules = new Map<string, string>();
+  const styleBlock = svg.match(/<style[^>]*>([\s\S]*?)<\/style>/);
+  if (styleBlock) {
+    const ruleRe = /\.([\w-]+)\s*\{\s*fill:\s*([^;}]+?)\s*[;}]/g;
+    let m: RegExpExecArray | null;
+    while ((m = ruleRe.exec(styleBlock[1])) !== null) {
+      rules.set(m[1], m[2].trim());
+    }
+  }
+  let out = svg.replace(/<defs>[\s\S]*?<\/defs>/g, '');
+  rules.forEach((color, cls) => {
+    const attrRe = new RegExp(`class="${cls}"`, 'g');
+    out = out.replace(attrRe, `fill="${color}"`);
+  });
+  return out;
+};
+
 interface ShapeDef {
   id: string;
   svg: string;
@@ -17,11 +42,11 @@ interface ShapeDef {
 }
 
 const shapes: ShapeDef[] = [
-  { id: 'diamond', svg: diamondSvg, x: 8,  y: 18, size: 'small',  opacity: 0.72, mobile: true,  scrollRate: 0.18 },
-  { id: 'circle',  svg: circleSvg,  x: 82, y: 12, size: 'medium', opacity: 0.70, mobile: false, scrollRate: 0.22 },
-  { id: 'square2', svg: square2Svg, x: 88, y: 55, size: 'medium', opacity: 0.68, mobile: false, scrollRate: 0.32 },
-  { id: 'square',  svg: squareSvg,  x: 6,  y: 68, size: 'small',  opacity: 0.72, mobile: true,  scrollRate: 0.34 },
-  { id: 'dots',    svg: dotsSvg,    x: 62, y: 90, size: 'small',  opacity: 0.70, mobile: true,  scrollRate: 0.42 },
+  { id: 'diamond', svg: inlineFills(diamondSvg), x: 8,  y: 18, size: 'small',  opacity: 0.72, mobile: true,  scrollRate: 0.18 },
+  { id: 'circle',  svg: inlineFills(circleSvg),  x: 82, y: 12, size: 'medium', opacity: 0.70, mobile: false, scrollRate: 0.22 },
+  { id: 'square2', svg: inlineFills(square2Svg), x: 88, y: 55, size: 'medium', opacity: 0.68, mobile: false, scrollRate: 0.32 },
+  { id: 'square',  svg: inlineFills(squareSvg),  x: 6,  y: 68, size: 'small',  opacity: 0.72, mobile: true,  scrollRate: 0.34 },
+  { id: 'dots',    svg: inlineFills(dotsSvg),    x: 62, y: 90, size: 'small',  opacity: 0.70, mobile: true,  scrollRate: 0.42 },
 ];
 ---
 
