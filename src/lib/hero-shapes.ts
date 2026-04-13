@@ -93,59 +93,119 @@ export const variantDrift: VariantFn = (shapes, getCursor) => {
   };
 };
 
-/* ─── Variant B — Scatter
- * A slow idle Lissajous wobble runs constantly so shapes are never fully
- * at rest. On top of that, when cursor enters a 260px radius each shape
- * glides AWAY on a quadratic falloff curve, max 48px displacement. The
- * wobble target + scatter target + scroll offset are all composed before
- * being handed to a single gsap.quickTo per axis — the quickTo smoothing
- * acts as damping on the combined signal. Elastic return on cleanup. */
-export const variantScatter: VariantFn = (shapes, getCursor) => {
-  const REACH = 260;
-  const MAX_DISP = 48;
-  const WOBBLE_AMP_X = 7;
-  const WOBBLE_AMP_Y = 9;
-  const WOBBLE_FREQ_X = (2 * Math.PI) / 12;
-  const WOBBLE_FREQ_Y = (2 * Math.PI) / 14;
+/* ─── Variant B — Wander
+ * Free-roaming random walk across the hero. Each shape has its own
+ * velocity vector that accelerates/decelerates with small random nudges
+ * and is capped to a soft max speed. Positions are toroidal — a shape
+ * that exits the hero on one edge re-enters on the opposite. Cursor
+ * proximity adds a gentle repulsion push (200px radius, 30px/s max).
+ * Wordmark column and CTA band are no-fly zones: any shape inside gets
+ * a radial push out, proportional to penetration depth, so shapes veer
+ * around rather than drive through the protected regions. */
+const WORDMARK_COL_START = 0.35;
+const WORDMARK_COL_END = 0.65;
+const CTA_BAND_START = 0.82;
 
-  const quickTos = shapes.map((shape) => ({
-    x: gsap.quickTo(shape, 'x', { duration: 0.32, ease: 'power2.out' }),
-    y: gsap.quickTo(shape, 'y', { duration: 0.32, ease: 'power2.out' }),
+const sampleRandomSafePosition = (width: number, height: number) => {
+  for (let attempt = 0; attempt < 16; attempt++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const inWordmark = x > width * WORDMARK_COL_START && x < width * WORDMARK_COL_END;
+    const inCta = y > height * CTA_BAND_START;
+    if (!inWordmark && !inCta) return { x, y };
+  }
+  return { x: Math.random() * width * 0.3, y: Math.random() * height * 0.6 };
+};
+
+export const variantWander: VariantFn = (shapes, getCursor, container) => {
+  const MAX_SPEED = 24;
+  const NUDGE_MAGNITUDE = 14;
+  const CURSOR_REPEL_REACH = 200;
+  const CURSOR_REPEL_FORCE = 30;
+  const ZONE_PUSH_FORCE = 180;
+  const DAMPING = 0.985;
+
+  const rect0 = container.getBoundingClientRect();
+  const anchors = shapes.map((shape) => {
+    const r = shape.getBoundingClientRect();
+    return {
+      x: r.left + r.width / 2 - rect0.left,
+      y: r.top + r.height / 2 - rect0.top,
+    };
+  });
+
+  const positions = shapes.map(() => sampleRandomSafePosition(rect0.width, rect0.height));
+  const velocities = shapes.map(() => ({
+    x: (Math.random() - 0.5) * MAX_SPEED,
+    y: (Math.random() - 0.5) * MAX_SPEED,
   }));
+
   const scrollRates = shapes.map(readScrollRate);
-  const wobblePhases = shapes.map((_, i) => ({
-    x: (i * 1.3) % (Math.PI * 2),
-    y: (i * 2.1) % (Math.PI * 2),
-  }));
-  const start = performance.now();
+  let lastTime = performance.now();
 
   const tick = () => {
-    const t = (performance.now() - start) / 1000;
+    const now = performance.now();
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
     const cursor = getCursor();
+    const rect = container.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const wordmarkL = width * WORDMARK_COL_START;
+    const wordmarkR = width * WORDMARK_COL_END;
+    const wordmarkCx = (wordmarkL + wordmarkR) / 2;
+    const ctaTop = height * CTA_BAND_START;
+
     shapes.forEach((shape, i) => {
-      const wobbleX = Math.sin(t * WOBBLE_FREQ_X + wobblePhases[i].x) * WOBBLE_AMP_X;
-      const wobbleY = Math.sin(t * WOBBLE_FREQ_Y + wobblePhases[i].y) * WOBBLE_AMP_Y;
+      const pos = positions[i];
+      const vel = velocities[i];
+
+      vel.x += (Math.random() - 0.5) * NUDGE_MAGNITUDE * dt;
+      vel.y += (Math.random() - 0.5) * NUDGE_MAGNITUDE * dt;
+
+      if (cursor.active) {
+        const dx = pos.x - (cursor.x - rect.left);
+        const dy = pos.y - (cursor.y - rect.top);
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0 && dist < CURSOR_REPEL_REACH) {
+          const weight = 1 - dist / CURSOR_REPEL_REACH;
+          vel.x += (dx / dist) * weight * CURSOR_REPEL_FORCE * dt;
+          vel.y += (dy / dist) * weight * CURSOR_REPEL_FORCE * dt;
+        }
+      }
+
+      if (pos.x > wordmarkL && pos.x < wordmarkR) {
+        const depth = 1 - Math.abs(pos.x - wordmarkCx) / ((wordmarkR - wordmarkL) / 2);
+        const dir = pos.x < wordmarkCx ? -1 : 1;
+        vel.x += dir * depth * ZONE_PUSH_FORCE * dt;
+      }
+      if (pos.y > ctaTop) {
+        const depth = (pos.y - ctaTop) / (height - ctaTop + 1);
+        vel.y -= (0.5 + depth) * ZONE_PUSH_FORCE * dt;
+      }
+
+      vel.x *= DAMPING;
+      vel.y *= DAMPING;
+
+      const speed = Math.hypot(vel.x, vel.y);
+      if (speed > MAX_SPEED) {
+        vel.x = (vel.x / speed) * MAX_SPEED;
+        vel.y = (vel.y / speed) * MAX_SPEED;
+      }
+
+      pos.x += vel.x * dt * 60;
+      pos.y += vel.y * dt * 60;
+
+      if (pos.x < -20) pos.x = width + 20;
+      else if (pos.x > width + 20) pos.x = -20;
+      if (pos.y < -20) pos.y = height + 20;
+      else if (pos.y > height + 20) pos.y = -20;
+
       const scrollY = -cursor.scrollOffset * scrollRates[i];
-      const rect = shape.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      if (!cursor.active) {
-        quickTos[i].x(wobbleX);
-        quickTos[i].y(wobbleY + scrollY);
-        return;
-      }
-      const dx = cx - cursor.x;
-      const dy = cy - cursor.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > REACH || dist === 0) {
-        quickTos[i].x(wobbleX);
-        quickTos[i].y(wobbleY + scrollY);
-        return;
-      }
-      const falloff = (1 - dist / REACH) ** 2;
-      const offset = falloff * MAX_DISP;
-      quickTos[i].x((dx / dist) * offset + wobbleX);
-      quickTos[i].y((dy / dist) * offset + wobbleY + scrollY);
+      gsap.set(shape, {
+        x: pos.x - anchors[i].x,
+        y: pos.y - anchors[i].y + scrollY,
+      });
     });
   };
 
@@ -153,9 +213,7 @@ export const variantScatter: VariantFn = (shapes, getCursor) => {
 
   return () => {
     gsap.ticker.remove(tick);
-    shapes.forEach((shape) => {
-      gsap.to(shape, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)' });
-    });
+    gsap.set(shapes, { x: 0, y: 0 });
   };
 };
 
@@ -249,6 +307,6 @@ export const variantConstellation: VariantFn = (shapes, getCursor, container) =>
 
 export const variants: Record<VariantId, VariantFn> = {
   A: variantDrift,
-  B: variantScatter,
+  B: variantWander,
   C: variantConstellation,
 };
