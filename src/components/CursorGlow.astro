@@ -1,0 +1,86 @@
+---
+---
+
+<div
+  class="cursor-glow"
+  aria-hidden="true"
+  data-lenis-prevent
+>
+</div>
+
+<style>
+  .cursor-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    height: 320px;
+    margin-left: -160px;
+    margin-top: -160px;
+    pointer-events: none;
+    z-index: 40;
+    opacity: 0;
+    mix-blend-mode: screen;
+    background: radial-gradient(
+      circle at center,
+      rgba(241, 105, 57, 0.45) 0%,
+      rgba(241, 105, 57, 0.22) 28%,
+      rgba(241, 105, 57, 0.06) 55%,
+      transparent 75%
+    );
+    filter: blur(16px);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transition: opacity 300ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce), (pointer: coarse) {
+    .cursor-glow {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  const CURSOR_LAG = 0.4;
+
+  const el = document.querySelector<HTMLElement>('.cursor-glow');
+  if (el) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+
+    if (!reduce && !coarse) {
+      const xTo = gsap.quickTo(el, 'x', { duration: CURSOR_LAG, ease: 'power3.out' });
+      const yTo = gsap.quickTo(el, 'y', { duration: CURSOR_LAG, ease: 'power3.out' });
+
+      let revealed = false;
+      const onMove = (e: MouseEvent) => {
+        xTo(e.clientX);
+        yTo(e.clientY);
+        if (!revealed) {
+          revealed = true;
+          el.style.opacity = '1';
+        }
+      };
+
+      window.addEventListener('mousemove', onMove, { passive: true });
+
+      window.addEventListener(
+        'mouseleave',
+        () => {
+          el.style.opacity = '0';
+        },
+        { passive: true },
+      );
+      window.addEventListener(
+        'mouseenter',
+        () => {
+          if (revealed) el.style.opacity = '1';
+        },
+        { passive: true },
+      );
+    }
+  }
+</script>

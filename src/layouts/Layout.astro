@@ -1,6 +1,7 @@
 ---
 import '~/styles/global.css';
 import SmoothScroll from '~/components/SmoothScroll.astro';
+import CursorGlow from '~/components/CursorGlow.astro';
 
 interface Props {
   title: string;
@@ -46,6 +47,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   <body>
     <a href="#main" class="sr-only focus:not-sr-only">Skip to content</a>
     <slot />
+    <CursorGlow />
     <SmoothScroll />
   </body>
 </html>
